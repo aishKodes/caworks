@@ -1,5 +1,5 @@
 export const imageConfig = {
-  logo: "/images/vedanath-logo.svg",
+  logo: "/images/vbc-logo.svg",
   heroPremium: "/images/hero-premium-consulting.jpg",
   heroDashboard: "/images/hero-dashboard.png",
   individualItr: "/images/individual-itr-filing.jpg",

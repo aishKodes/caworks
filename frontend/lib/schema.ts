@@ -8,7 +8,8 @@ export function getOrganizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: siteConfig.legalName,
+    name: siteConfig.name,
+    legalName: siteConfig.registeredBusinessName,
     url: siteConfig.siteUrl,
     logo: absoluteUrl("/favicon.svg"),
     contactPoint: {
@@ -25,7 +26,8 @@ export function getProfessionalServiceSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
-    name: siteConfig.legalName,
+    name: siteConfig.name,
+    legalName: siteConfig.registeredBusinessName,
     url: siteConfig.siteUrl,
     image: absoluteUrl(siteConfig.images.heroPremium),
     telephone: siteConfig.phone,
@@ -50,7 +52,7 @@ export function getServiceSchema(service: Service) {
     description: service.metaDescription,
     provider: {
       "@type": "Organization",
-      name: siteConfig.legalName,
+      name: siteConfig.name,
       url: siteConfig.siteUrl
     },
     areaServed: "IN",
@@ -96,11 +98,11 @@ export function getArticleSchema(post: BlogPost) {
     dateModified: post.updatedAt,
     author: {
       "@type": "Organization",
-      name: siteConfig.legalName
+      name: siteConfig.name
     },
     publisher: {
       "@type": "Organization",
-      name: siteConfig.legalName,
+      name: siteConfig.name,
       logo: {
         "@type": "ImageObject",
         url: absoluteUrl("/favicon.svg")

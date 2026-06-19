@@ -46,8 +46,12 @@ async function fetchContent<T>(path: string): Promise<T | null> {
   const base = siteConfig.apiBaseUrl.replace(/\/$/, "");
   if (!base) return null;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 800);
+
   try {
     const response = await fetch(`${base}${path}`, {
+      signal: controller.signal,
       next: { revalidate: 300 }
     });
     if (!response.ok) return null;
@@ -55,6 +59,8 @@ async function fetchContent<T>(path: string): Promise<T | null> {
     return payload.ok && payload.data ? payload.data : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

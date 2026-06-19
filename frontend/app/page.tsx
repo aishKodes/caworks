@@ -140,7 +140,7 @@ export default async function HomePage() {
           </div>
           <div>
             <SectionHeader
-              eyebrow="Why choose Vedanath Business Consultants"
+              eyebrow="Why choose VB Consultants"
               title="Serious paperwork support, kept simple for real users."
               description="The platform is built for people who want clear next steps, private uploads, transparent fees and status updates without confusing language."
             />

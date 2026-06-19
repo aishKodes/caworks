@@ -24,12 +24,12 @@ const staticPages = {
   },
   contact: {
     title: "Contact",
-    metaTitle: "Contact Vedanath Business Consultants",
+    metaTitle: "Contact VB Consultants",
     description: "Contact support for ITR filing, GST, tax notice, loan paperwork and business compliance requests."
   },
   about: {
     title: "About",
-    metaTitle: "About Vedanath Business Consultants",
+    metaTitle: "About VB Consultants",
     description: "Learn about this online tax, GST, loan and business paperwork help platform."
   },
   "privacy-policy": {
@@ -149,7 +149,7 @@ function AboutPage() {
           <p className="mt-5 text-lg leading-8 text-muted">The platform helps Indian salaried people, families, freelancers and small businesses upload documents, pay securely and track paperwork requests from a phone.</p>
           <div className="mt-8"><TrustBadges /></div>
         </div>
-        <Image src={siteConfig.images.contact} alt="Vedanath Business Consultants office placeholder" width={900} height={700} className="rounded-3xl object-cover shadow-premium" />
+        <Image src={siteConfig.images.contact} alt="VB Consultants office placeholder" width={900} height={700} className="rounded-3xl object-cover shadow-premium" />
       </section>
       <CTASection className="pb-16" />
     </>
@@ -187,7 +187,9 @@ function LegalPage({ slug }: { slug: keyof typeof legalText }) {
         <div className="mx-auto max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Legal</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{page.title}</h1>
-          <p className="mt-5 text-sm leading-7 text-muted">This is starter legal text. Review with a lawyer before launch.</p>
+          <p className="mt-5 text-sm leading-7 text-muted">
+            VB Consultants is the public brand of {siteConfig.registeredBusinessName}. This is starter legal text. Review with a lawyer before launch.
+          </p>
           <div className="mt-10 space-y-5">
             {legalText[slug].map(([heading, body]) => (
               <section key={heading} className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">

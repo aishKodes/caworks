@@ -4,6 +4,7 @@ require_admin_page();
 $message = '';
 $fields = [
     'business_name' => ['Business name', 'site', 'text'],
+    'registered_business_name' => ['Registered business name', 'site', 'text'],
     'logo' => ['Logo path or URL', 'site', 'text'],
     'favicon' => ['Favicon path or URL', 'site', 'text'],
     'tagline' => ['Tagline', 'site', 'text'],

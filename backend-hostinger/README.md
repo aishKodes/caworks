@@ -1,6 +1,6 @@
 # Hostinger Backend Setup
 
-This folder contains the PHP 8+ and MySQL backend for Vedanath Business Consultants.
+This folder contains the PHP 8+ and MySQL backend for VB Consultants. It is for Hostinger only, not Vercel.
 
 ## 1. Upload files
 
@@ -13,7 +13,7 @@ public_html/api-site/
 Point your API subdomain to this folder, for example:
 
 ```text
-https://api.yourdomain.com
+https://api.vbcbharat.com
 ```
 
 The `.htaccess` file routes `/api/...` requests to `api/index.php`.
@@ -51,7 +51,7 @@ Edit `config.php`:
 - Admin email
 - Allowed frontend origin
 - UPI ID
-- Media base URL, for example `https://api.yourdomain.com/media`
+- Media base URL, for example `https://api.vbcbharat.com/media`
 - `app_secret`
 
 Use a long random `app_secret`.
@@ -80,7 +80,7 @@ VALUES ('admin@example.com', 'PASTE_HASH_HERE', 'Admin User');
 Login at:
 
 ```text
-https://api.yourdomain.com/admin/login.php
+https://api.vbcbharat.com/admin/login.php
 ```
 
 ## 5. Configure SMTP
@@ -104,7 +104,7 @@ In Razorpay dashboard:
 3. Add webhook URL:
 
 ```text
-https://api.yourdomain.com/api/razorpay-webhook
+https://api.vbcbharat.com/api/razorpay-webhook
 ```
 
 4. Copy webhook secret into `config.php`.
@@ -116,13 +116,13 @@ The backend verifies Razorpay payment signature and webhook signature.
 In Vercel, set:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com
+NEXT_PUBLIC_API_BASE_URL=https://api.vbcbharat.com
 ```
 
 In backend `config.php`, set:
 
 ```php
-'allowed_origin' => 'https://www.yourdomain.com',
+'allowed_origin' => 'https://www.vbcbharat.com',
 ```
 
 ## 8. Admin workflow

@@ -1,4 +1,4 @@
-# Vedanath Business Consultants Platform
+# VB Consultants Platform
 
 Production-ready starter platform for Indian tax, GST, loan paperwork and business compliance help.
 
@@ -20,14 +20,25 @@ npm run build
 Create `frontend/.env.local`:
 
 ```bash
-NEXT_PUBLIC_SITE_URL=https://www.yourdomain.com
-NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com
-NEXT_PUBLIC_WHATSAPP_NUMBER=919000000000
-NEXT_PUBLIC_BRAND_NAME=Vedanath Business Consultants
+NEXT_PUBLIC_SITE_URL=https://www.vbcbharat.com
+NEXT_PUBLIC_API_BASE_URL=https://api.vbcbharat.com
+NEXT_PUBLIC_WHATSAPP_NUMBER=91XXXXXXXXXX
+NEXT_PUBLIC_BRAND_NAME=VB Consultants
+NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
 ```
 
-Deploy `frontend` to Vercel. Set the same environment variables in Vercel.
+Deploy only `frontend` to Vercel. Set the same environment variables in Vercel.
+
+Required Vercel project settings:
+
+- Root Directory: `frontend`
+- Framework Preset: `Next.js`
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: leave blank / default
+
+Do not deploy `backend-hostinger` to Vercel. It is PHP/MySQL for Hostinger only.
 
 ## Backend
 

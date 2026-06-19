@@ -2,7 +2,7 @@
 return [
     'app_env' => 'production',
     'app_secret' => 'change-this-long-random-secret',
-    'allowed_origin' => 'https://www.example.com',
+    'allowed_origin' => 'https://www.vbcbharat.com',
     'mysql' => [
         'host' => 'localhost',
         'database' => 'hostinger_database',
@@ -12,11 +12,11 @@ return [
     ],
     'smtp' => [
         'host' => 'smtp.hostinger.com',
-        'username' => 'support@example.com',
+        'username' => 'support@vbcbharat.com',
         'password' => 'smtp_password',
         'port' => 465,
-        'from_email' => 'support@example.com',
-        'from_name' => 'Vedanath Business Consultants',
+        'from_email' => 'support@vbcbharat.com',
+        'from_name' => 'VB Consultants',
     ],
     'razorpay' => [
         'key_id' => 'rzp_test_xxxxxxxxxxxxx',
@@ -28,5 +28,5 @@ return [
     'upi_id' => 'payments@exampleupi',
     'upload_dir' => __DIR__ . '/uploads',
     'media_dir' => __DIR__ . '/media',
-    'media_base_url' => 'https://api.example.com/media',
+    'media_base_url' => 'https://api.vbcbharat.com/media',
 ];

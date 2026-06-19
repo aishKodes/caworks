@@ -36,6 +36,7 @@ export function Footer() {
             <div className="mt-6 space-y-2 text-sm text-white/70">
               <p>{siteConfig.address}</p>
               <p>{siteConfig.phone} · {siteConfig.email}</p>
+              <p className="text-xs text-white/45">Registered business name: {siteConfig.registeredBusinessName}</p>
             </div>
             <div className="mt-6">
               <WhatsAppButton variant="light" />
@@ -79,7 +80,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 border-t border-white/10 pt-6 text-xs text-white/50">
-          © {new Date().getFullYear()} {siteConfig.legalName}. All rights reserved.
+          © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
         </div>
       </div>
     </footer>

@@ -3,14 +3,10 @@ import Image from "next/image";
 import { QuickLeadForm } from "@/components/QuickLeadForm";
 import { siteConfig } from "@/data/site.config";
 
-const trustLine = ["Secure upload", "Razorpay payment", "Manual payment option", "WhatsApp updates", "No false refund promises"];
-const statusCards = [
-  ["Request ID", "REQ-284917"],
-  ["Documents", "Received"],
-  ["Payment", "Pending"],
-  ["Review", "Queued"],
-  ["Filing status", "Next step ready"],
-  ["WhatsApp update", "Prepared"]
+const trustLine = ["Secure upload", "Razorpay payment", "No false refund promises"];
+const heroCards = [
+  ["Salary ITR launch", "₹199 onwards", "Final fee depends on documents."],
+  ["Request status", "Track from phone", "Upload, pay and follow updates."]
 ];
 
 export function HeroSection({
@@ -33,7 +29,7 @@ export function HeroSection({
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(164,22,36,0.13),transparent_32rem),linear-gradient(135deg,#fffaf7_0%,#ffffff_48%,#f5f1ed_100%)]" />
-      <div className="container-shell grid gap-10 pb-14 pt-12 lg:grid-cols-[1fr_0.96fr] lg:items-center lg:pb-20 lg:pt-20">
+      <div className="container-shell grid gap-12 pb-16 pt-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pb-24 lg:pt-20">
         <div>
           <p className="inline-flex rounded-full border border-brand-600/20 bg-white/85 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-700 shadow-soft backdrop-blur">
             {siteConfig.name}
@@ -59,46 +55,29 @@ export function HeroSection({
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr] lg:items-stretch">
-          <div className="relative min-h-[500px] overflow-hidden rounded-[2rem] border border-charcoal-900/10 bg-charcoal-900 shadow-premium">
+        <div className="grid gap-5">
+          <div className="relative rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
+            <div className="relative min-h-[300px] overflow-hidden rounded-[1.55rem] bg-charcoal-900 sm:min-h-[420px] lg:min-h-[520px]">
             <Image
               src={image}
               alt="Professional paperwork support desk"
               fill
               priority
               sizes="(min-width: 1024px) 46vw, 100vw"
-              className="object-cover opacity-90"
+              className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 via-charcoal-900/35 to-transparent" />
-            <div className="absolute left-4 right-4 top-4 rounded-3xl border border-white/15 bg-white/92 p-4 text-charcoal-900 shadow-premium backdrop-blur md:left-6 md:right-6 md:top-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Live request desk</p>
-                  <p className="mt-1 text-2xl font-semibold">TAX-583921</p>
-                </div>
-                <span className="rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white">Active</span>
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {statusCards.map(([title, text]) => (
-                  <div key={title} className="rounded-2xl border border-charcoal-900/10 bg-paper/80 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-600">{title}</p>
-                    <p className="mt-1 text-sm font-semibold">{text}</p>
-                  </div>
-                ))}
-              </div>
             </div>
-            <div className="absolute bottom-4 left-4 right-4 rounded-3xl border border-white/15 bg-charcoal-900/86 p-4 text-white shadow-premium backdrop-blur md:bottom-6 md:left-6 md:right-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/55">Salary ITR launch</p>
-                  <p className="mt-1 text-2xl font-semibold">₹199 onwards</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:absolute lg:-bottom-6 lg:left-8 lg:right-8 lg:mt-0">
+              {heroCards.map(([label, value, note], index) => (
+                <div key={label} className={`rounded-2xl border p-4 shadow-premium ${index === 0 ? "border-brand-600/20 bg-white text-charcoal-900" : "border-white/15 bg-charcoal-900 text-white"}`}>
+                  <p className={`text-[11px] font-bold uppercase tracking-[0.18em] ${index === 0 ? "text-brand-600" : "text-white/55"}`}>{label}</p>
+                  <p className="mt-2 text-xl font-semibold">{value}</p>
+                  <p className={`mt-2 text-xs leading-5 ${index === 0 ? "text-muted" : "text-white/65"}`}>{note}</p>
                 </div>
-                <Link href="/salary-itr-filing" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-charcoal-900">View</Link>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-white/70">Final fee depends on documents, income type and complexity.</p>
+              ))}
             </div>
           </div>
-          <div className="self-center lg:-ml-12">
+          <div className="lg:pt-8">
             <QuickLeadForm sourcePage="homepage-hero" compact />
           </div>
         </div>

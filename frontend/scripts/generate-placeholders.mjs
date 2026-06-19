@@ -108,7 +108,7 @@ async function downloadImage(file, url, title, subtitle) {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Vedanath placeholder asset generator"
+        "User-Agent": "VB Consultants placeholder asset generator"
       }
     });
     if (!response.ok) {
@@ -139,14 +139,14 @@ for (const [file, title, subtitle, accent, bg, format] of generatedRasters) {
 }
 
 writeFileSync(
-  join(imageDir, "vedanath-logo.svg"),
+  join(imageDir, "vbc-logo.svg"),
   `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120" role="img" aria-label="Vedanath Business Consultants">
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120" role="img" aria-label="VB Consultants">
   <rect width="420" height="120" rx="28" fill="#111111"/>
   <rect x="16" y="16" width="88" height="88" rx="24" fill="#ffffff"/>
   <path d="M38 38h14l12 34 12-34h14L70 84H58L38 38z" fill="#a41624"/>
-  <text x="124" y="55" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#ffffff">Vedanath</text>
-  <text x="124" y="83" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="600" fill="#ffffff" opacity=".72">Business Consultants</text>
+  <text x="124" y="57" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#ffffff">VB Consultants</text>
+  <text x="124" y="84" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" fill="#ffffff" opacity=".72">Tax, GST and paperwork help</text>
 </svg>`,
   "utf8"
 );
@@ -154,7 +154,7 @@ writeFileSync(
 writeFileSync(
   join(process.cwd(), "public", "favicon.svg"),
   `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Vedanath Business Consultants">
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="VB Consultants">
   <rect width="64" height="64" rx="18" fill="#111111"/>
   <path d="M17 18h9l7 23 7-23h9L37 47H29L17 18z" fill="#ffffff"/>
   <circle cx="47" cy="17" r="5" fill="#a41624"/>
