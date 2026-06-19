@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+import { BlogCard } from "@/components/BlogCard";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { CTASection } from "@/components/CTASection";
+import { blogPosts } from "@/data/blogPosts";
+import { buildMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Guides",
+  description: "Simple guides for ITR, GST, tax documents, business paperwork and loan project reports.",
+  path: "/blog"
+});
+
+export default function BlogPage() {
+  return (
+    <>
+      <Breadcrumbs items={[{ name: "Guides", href: "/blog" }]} />
+      <section className="container-shell pb-16 pt-8">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Guides</p>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Simple tax and paperwork guides.</h1>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">Read simple guides, then start a request if you need help.</p>
+        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {blogPosts.map((post) => <BlogCard key={post.slug} post={post} />)}
+        </div>
+      </section>
+      <CTASection className="pb-16" />
+    </>
+  );
+}

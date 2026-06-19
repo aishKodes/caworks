@@ -1,0 +1,599 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/response.php';
+require_once __DIR__ . '/../includes/validation.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/rate_limit.php';
+require_once __DIR__ . '/../includes/upload.php';
+require_once __DIR__ . '/../includes/mail.php';
+require_once __DIR__ . '/../includes/razorpay.php';
+require_once __DIR__ . '/../includes/whatsapp.php';
+require_once __DIR__ . '/../includes/audit.php';
+require_once __DIR__ . '/../includes/cms.php';
+
+$config = app_config();
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin && $origin === $config['allowed_origin']) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
+}
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit;
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '';
+$path = preg_replace('#^.*?/api#', '', $uri);
+$path = '/' . trim((string) $path, '/');
+if ($path === '/') {
+    ok(['status' => 'online']);
+}
+
+try {
+    route($method, $path);
+} catch (Throwable $e) {
+    if (($config['app_env'] ?? 'production') !== 'production') {
+        fail($e->getMessage(), 500);
+    }
+    fail('Something went wrong. Please try again or use WhatsApp.', 500);
+}
+
+function route(string $method, string $path): void {
+    if ($method === 'POST' && $path === '/quick-lead') handle_quick_lead();
+    if ($method === 'POST' && $path === '/contact') handle_contact();
+    if ($method === 'POST' && $path === '/signup') handle_signup();
+    if ($method === 'POST' && $path === '/login') handle_login();
+    if ($method === 'POST' && $path === '/logout') handle_logout();
+    if ($method === 'GET' && $path === '/me') handle_me();
+    if ($method === 'POST' && $path === '/service-request') handle_service_request();
+    if ($method === 'GET' && $path === '/my-requests') handle_my_requests();
+    if ($method === 'GET' && preg_match('#^/request/(\d+)$#', $path, $m)) handle_request_detail((int) $m[1]);
+    if ($method === 'POST' && $path === '/upload-documents') handle_upload_documents();
+    if ($method === 'POST' && $path === '/create-razorpay-order') handle_create_razorpay_order();
+    if ($method === 'POST' && $path === '/verify-razorpay-payment') handle_verify_razorpay_payment();
+    if ($method === 'POST' && $path === '/manual-payment-screenshot') handle_manual_payment_screenshot();
+    if ($method === 'POST' && $path === '/razorpay-webhook') handle_razorpay_webhook();
+
+    if ($method === 'GET' && $path === '/content/site') handle_content_site();
+    if ($method === 'GET' && $path === '/content/homepage') handle_content_homepage();
+    if ($method === 'GET' && $path === '/content/pricing') handle_content_pricing();
+    if ($method === 'GET' && $path === '/content/services') handle_content_services();
+    if ($method === 'GET' && preg_match('#^/content/service/([a-z0-9-]+)$#', $path, $m)) handle_content_service($m[1]);
+    if ($method === 'GET' && $path === '/content/blog') handle_content_blog();
+    if ($method === 'GET' && preg_match('#^/content/blog/([a-z0-9-]+)$#', $path, $m)) handle_content_blog_post($m[1]);
+    if ($method === 'GET' && $path === '/content/local-pages') handle_content_local_pages();
+
+    if ($method === 'POST' && $path === '/admin/login') handle_admin_login();
+    if ($method === 'GET' && $path === '/admin/stats') handle_admin_stats();
+    if ($method === 'GET' && $path === '/admin/leads') handle_admin_leads();
+    if ($method === 'GET' && $path === '/admin/users') handle_admin_users();
+    if ($method === 'GET' && $path === '/admin/requests') handle_admin_requests();
+    if ($method === 'GET' && preg_match('#^/admin/request/(\d+)$#', $path, $m)) handle_admin_request_detail((int) $m[1]);
+    if ($method === 'POST' && preg_match('#^/admin/request/(\d+)/status$#', $path, $m)) handle_admin_request_status((int) $m[1]);
+    if ($method === 'POST' && preg_match('#^/admin/request/(\d+)/note$#', $path, $m)) handle_admin_note((int) $m[1]);
+    if ($method === 'POST' && preg_match('#^/admin/payment/(\d+)/verify-manual$#', $path, $m)) handle_admin_manual_payment((int) $m[1], true);
+    if ($method === 'POST' && preg_match('#^/admin/payment/(\d+)/reject-manual$#', $path, $m)) handle_admin_manual_payment((int) $m[1], false);
+    if ($method === 'GET' && preg_match('#^/admin/document/(\d+)/download$#', $path, $m)) handle_admin_document_download((int) $m[1]);
+    if ($method === 'GET' && $path === '/admin/export/leads') handle_admin_export_leads();
+    if ($method === 'GET' && $path === '/admin/settings') handle_admin_settings_get();
+    if ($method === 'POST' && $path === '/admin/settings') handle_admin_settings_post();
+    if ($method === 'GET' && $path === '/admin/homepage') handle_admin_homepage_get();
+    if ($method === 'POST' && $path === '/admin/homepage') handle_admin_homepage_post();
+    if ($method === 'GET' && $path === '/admin/service-content') handle_admin_service_content_get();
+    if ($method === 'POST' && $path === '/admin/service-content') handle_admin_service_content_post();
+    if ($method === 'GET' && $path === '/admin/pricing') handle_admin_pricing_get();
+    if ($method === 'POST' && $path === '/admin/pricing') handle_admin_pricing_post();
+    if ($method === 'GET' && $path === '/admin/media') handle_admin_media_get();
+    if ($method === 'POST' && $path === '/admin/media') handle_admin_media_post();
+    if ($method === 'GET' && $path === '/admin/blog') handle_admin_blog_get();
+    if ($method === 'POST' && $path === '/admin/blog') handle_admin_blog_post();
+    if ($method === 'GET' && $path === '/admin/local-seo') handle_admin_local_seo_get();
+    if ($method === 'POST' && $path === '/admin/local-seo') handle_admin_local_seo_post();
+    if ($method === 'GET' && $path === '/admin/integrations') handle_admin_integrations_get();
+    if ($method === 'POST' && $path === '/admin/integrations') handle_admin_integrations_post();
+
+    fail('Endpoint not found.', 404);
+}
+
+function generate_code(string $prefix): string {
+    return $prefix . '-' . random_int(100000, 999999);
+}
+
+function handle_quick_lead(): void {
+    rate_limit('quick_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 8, 300);
+    $data = read_json();
+    if (clean_string($data['honeypot'] ?? '') !== '') ok([], 'Thank you.');
+    require_fields($data, ['phone']);
+    $phone = clean_string($data['phone'], 30);
+    if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
+    $stmt = db()->prepare('INSERT INTO quick_leads (name, phone, service, message, source_page, utm_source, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([
+        clean_string($data['name'] ?? '', 160),
+        $phone,
+        clean_string($data['service'] ?? '', 120),
+        clean_string($data['message'] ?? '', 1000),
+        clean_string($data['sourcePage'] ?? '', 160),
+        clean_string($data['utm']['utm_source'] ?? '', 160),
+        clean_string($data['utm']['utm_campaign'] ?? '', 160),
+    ]);
+    email_admin('New quick phone lead', "Phone: {$phone}\nService: " . clean_string($data['service'] ?? ''));
+    ok([], 'Thank you. Our team will contact you on phone or WhatsApp.');
+}
+
+function handle_contact(): void {
+    $data = read_json();
+    if (clean_string($data['honeypot'] ?? '') !== '') ok([], 'Thank you.');
+    require_fields($data, ['name', 'phone', 'message']);
+    $phone = clean_string($data['phone'], 30);
+    if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
+    $stmt = db()->prepare('INSERT INTO quick_leads (name, phone, service, message, source_page) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([clean_string($data['name'], 160), $phone, clean_string($data['service'] ?? '', 120), clean_string($data['message'], 1000), 'contact']);
+    email_admin('Contact form submission', "Name: {$data['name']}\nPhone: {$phone}\nMessage: {$data['message']}");
+    ok([], 'Thank you. We will contact you shortly.');
+}
+
+function handle_signup(): void {
+    rate_limit('signup_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 5, 600);
+    $data = read_json();
+    require_fields($data, ['fullName', 'phone', 'email', 'password']);
+    $phone = clean_string($data['phone'], 30);
+    $email = strtolower(clean_string($data['email'], 180));
+    if (!valid_phone($phone) || !valid_email($email) || strlen((string) $data['password']) < 8) {
+        fail('Please check phone, email and password.', 422);
+    }
+    $taxId = generate_code('TAX');
+    $stmt = db()->prepare('INSERT INTO users (tax_help_id, full_name, phone, email, password_hash) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([$taxId, clean_string($data['fullName'], 160), $phone, $email, password_hash((string) $data['password'], PASSWORD_DEFAULT)]);
+    $userId = (int) db()->lastInsertId();
+    $user = ['id' => $userId, 'tax_help_id' => $taxId, 'full_name' => clean_string($data['fullName'], 160), 'phone' => $phone, 'email' => $email];
+    $token = create_auth_token($user);
+    set_auth_cookie('tax_help_token', $token, 60 * 60 * 24 * 30);
+    queueWhatsAppMessage($userId, null, $phone, 'signup', whatsapp_template('signup', ['name' => $user['full_name'], 'tax_id' => $taxId]));
+    email_admin('New signup', "Name: {$user['full_name']}\nPhone: {$phone}\nTax Help ID: {$taxId}");
+    send_email($email, 'Your Tax Help ID', "Hello {$user['full_name']},\n\nYour Tax Help ID is {$taxId}.\nLogin to upload documents and track requests.");
+    ok(['token' => $token, 'user' => $user], 'Signup complete.');
+}
+
+function handle_login(): void {
+    rate_limit('login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 8, 300);
+    $data = read_json();
+    require_fields($data, ['identifier', 'password']);
+    $id = clean_string($data['identifier'], 180);
+    $stmt = db()->prepare('SELECT * FROM users WHERE phone = ? OR email = ? OR tax_help_id = ? LIMIT 1');
+    $stmt->execute([$id, strtolower($id), strtoupper($id)]);
+    $user = $stmt->fetch();
+    if (!$user || !password_verify((string) $data['password'], $user['password_hash'])) {
+        fail('Invalid login details.', 401);
+    }
+    $summary = ['id' => (int) $user['id'], 'tax_help_id' => $user['tax_help_id'], 'full_name' => $user['full_name'], 'phone' => $user['phone'], 'email' => $user['email']];
+    $token = create_auth_token($summary);
+    set_auth_cookie('tax_help_token', $token, 60 * 60 * 24 * 30);
+    ok(['token' => $token, 'user' => $summary], 'Login complete.');
+}
+
+function handle_logout(): void {
+    setcookie('tax_help_token', '', time() - 3600, '/');
+    ok([], 'Logged out.');
+}
+
+function handle_me(): void {
+    ok(require_user());
+}
+
+function handle_service_request(): void {
+    $user = require_user();
+    $data = read_json();
+    require_fields($data, ['serviceType']);
+    $code = generate_code('REQ');
+    $stmt = db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, city, details) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$code, $user['id'], clean_string($data['serviceType'], 120), 'Request received', clean_string($data['city'] ?? '', 120), clean_string($data['details'] ?? '', 2000)]);
+    $requestId = (int) db()->lastInsertId();
+    db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$requestId, 'Request received', 'Request created.']);
+    email_admin('New service request', "Request: {$code}\nUser: {$user['tax_help_id']}\nService: {$data['serviceType']}");
+    ok(['request' => ['id' => $requestId, 'request_code' => $code, 'service_type' => clean_string($data['serviceType'], 120), 'status' => 'Request received', 'created_at' => date('c')]], 'Request created.');
+}
+
+function handle_my_requests(): void {
+    $user = require_user();
+    $stmt = db()->prepare('SELECT sr.*, COALESCE(MAX(p.status), "Payment pending") payment_status FROM service_requests sr LEFT JOIN payments p ON p.request_id = sr.id WHERE sr.user_id = ? GROUP BY sr.id ORDER BY sr.created_at DESC');
+    $stmt->execute([$user['id']]);
+    ok($stmt->fetchAll());
+}
+
+function handle_request_detail(int $id): void {
+    $user = require_user();
+    $stmt = db()->prepare('SELECT * FROM service_requests WHERE id = ? AND user_id = ?');
+    $stmt->execute([$id, $user['id']]);
+    $request = $stmt->fetch();
+    if (!$request) fail('Request not found.', 404);
+    $docs = db()->prepare('SELECT id, document_type, original_name, size, created_at FROM documents WHERE request_id = ? ORDER BY created_at DESC');
+    $docs->execute([$id]);
+    $payments = db()->prepare('SELECT id, amount, method, status, created_at FROM payments WHERE request_id = ? ORDER BY created_at DESC');
+    $payments->execute([$id]);
+    $updates = db()->prepare('SELECT status, note, created_at FROM status_updates WHERE request_id = ? AND visible_to_user = 1 ORDER BY created_at ASC');
+    $updates->execute([$id]);
+    $request['documents'] = $docs->fetchAll();
+    $request['payments'] = $payments->fetchAll();
+    $request['status_updates'] = $updates->fetchAll();
+    ok($request);
+}
+
+function handle_upload_documents(): void {
+    $user = require_user();
+    $requestId = (int) ($_POST['request_id'] ?? 0);
+    if ($requestId > 0) {
+        $check = db()->prepare('SELECT id FROM service_requests WHERE id = ? AND user_id = ?');
+        $check->execute([$requestId, $user['id']]);
+        if (!$check->fetch()) fail('Request not found.', 404);
+    }
+    $files = normalize_files_array($_FILES['files'] ?? []);
+    if (!$files) fail('Please select files.', 422);
+    $saved = [];
+    foreach ($files as $file) {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) continue;
+        $info = save_uploaded_file($file, 'doc');
+        $stmt = db()->prepare('INSERT INTO documents (user_id, request_id, document_type, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$user['id'], $requestId ?: null, clean_string($_POST['document_type'] ?? 'Document', 120), $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']]);
+        $saved[] = $info['original_name'];
+    }
+    if ($requestId > 0) {
+        db()->prepare('UPDATE service_requests SET status = ? WHERE id = ?')->execute(['Documents received', $requestId]);
+        db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$requestId, 'Documents received', 'Documents uploaded.']);
+    }
+    email_admin('New document upload', "User: {$user['tax_help_id']}\nFiles: " . implode(', ', $saved));
+    ok(['files' => $saved], 'Documents uploaded.');
+}
+
+function handle_create_razorpay_order(): void {
+    $user = require_user();
+    $data = read_json();
+    $requestId = (int) ($data['request_id'] ?? 0);
+    $amount = max(1, (float) ($data['amount'] ?? 0));
+    $amountPaise = (int) round($amount * 100);
+    $order = razorpay_create_order($amountPaise, 'REQ-' . $requestId);
+    $stmt = db()->prepare('INSERT INTO payments (user_id, request_id, amount, method, status, razorpay_order_id) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$user['id'], $requestId, $amount, 'razorpay', 'Payment pending', $order['id']]);
+    ok(['order_id' => $order['id'], 'amount' => $order['amount'], 'currency' => $order['currency']]);
+}
+
+function handle_verify_razorpay_payment(): void {
+    $user = require_user();
+    $data = read_json();
+    require_fields($data, ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']);
+    if (!razorpay_verify_signature($data['razorpay_order_id'], $data['razorpay_payment_id'], $data['razorpay_signature'])) {
+        fail('Payment signature could not be verified.', 422);
+    }
+    $stmt = db()->prepare('UPDATE payments SET status = ?, razorpay_payment_id = ? WHERE razorpay_order_id = ? AND user_id = ?');
+    $stmt->execute(['Payment received', $data['razorpay_payment_id'], $data['razorpay_order_id'], $user['id']]);
+    email_admin('Razorpay payment received', "User: {$user['tax_help_id']}\nPayment: {$data['razorpay_payment_id']}");
+    ok([], 'Payment received.');
+}
+
+function handle_manual_payment_screenshot(): void {
+    $user = require_user();
+    $requestId = (int) ($_POST['request_id'] ?? 0);
+    $amount = max(1, (float) ($_POST['amount'] ?? 0));
+    $stmt = db()->prepare('INSERT INTO payments (user_id, request_id, amount, method, status) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([$user['id'], $requestId, $amount, 'manual', 'Payment verification pending']);
+    $paymentId = (int) db()->lastInsertId();
+    $info = save_uploaded_file($_FILES['screenshot'] ?? [], 'payment');
+    db()->prepare('INSERT INTO manual_payment_screenshots (payment_id, original_name, stored_name, path, status) VALUES (?, ?, ?, ?, ?)')->execute([$paymentId, $info['original_name'], $info['stored_name'], $info['path'], 'Payment verification pending']);
+    email_admin('Manual payment screenshot uploaded', "User: {$user['tax_help_id']}\nRequest: {$requestId}\nAmount: {$amount}");
+    queueWhatsAppMessage($user['id'], $requestId, $user['phone'], 'manual_payment_verification', whatsapp_template('manual_payment_verification', ['name' => $user['full_name']]));
+    ok([], 'Payment screenshot received.');
+}
+
+function handle_razorpay_webhook(): void {
+    $body = file_get_contents('php://input') ?: '';
+    $signature = $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'] ?? '';
+    if (!razorpay_verify_webhook($body, $signature)) fail('Invalid webhook.', 401);
+    $event = json_decode($body, true);
+    $paymentId = $event['payload']['payment']['entity']['id'] ?? null;
+    $orderId = $event['payload']['payment']['entity']['order_id'] ?? null;
+    if ($paymentId && $orderId) {
+        db()->prepare('UPDATE payments SET status = ?, razorpay_payment_id = ? WHERE razorpay_order_id = ?')->execute(['Payment received', $paymentId, $orderId]);
+    }
+    ok([], 'Webhook processed.');
+}
+
+function handle_content_site(): void {
+    ok(cms_settings());
+}
+
+function handle_content_homepage(): void {
+    ok(cms_homepage_payload());
+}
+
+function handle_content_pricing(): void {
+    ok(cms_pricing_payload());
+}
+
+function handle_content_services(): void {
+    ok(cms_service_payload());
+}
+
+function handle_content_service(string $slug): void {
+    $rows = cms_service_payload($slug);
+    if (!$rows) fail('Content not found.', 404);
+    ok($rows[0]);
+}
+
+function handle_content_blog(): void {
+    ok(cms_blog_payload());
+}
+
+function handle_content_blog_post(string $slug): void {
+    $rows = cms_blog_payload($slug);
+    if (!$rows) fail('Post not found.', 404);
+    ok($rows[0]);
+}
+
+function handle_content_local_pages(): void {
+    $rows = db()->query('SELECT city, slug, title, body_content, meta_title, meta_description, image_path FROM local_seo_pages WHERE active=1 ORDER BY city')->fetchAll();
+    ok($rows);
+}
+
+function handle_admin_settings_get(): void {
+    require_admin();
+    ok(cms_settings());
+}
+
+function handle_admin_settings_post(): void {
+    require_admin();
+    $data = read_json();
+    foreach (($data['settings'] ?? []) as $key => $setting) {
+        $value = is_array($setting['value'] ?? null) ? json_encode($setting['value']) : (string) ($setting['value'] ?? '');
+        cms_upsert_setting(clean_string((string) $key, 120), $value, clean_string($setting['type'] ?? 'text', 40), clean_string($setting['group'] ?? 'site', 80));
+    }
+    ok([], 'Settings saved.');
+}
+
+function handle_admin_homepage_get(): void {
+    require_admin();
+    ok(cms_homepage_payload());
+}
+
+function handle_admin_homepage_post(): void {
+    require_admin();
+    $data = read_json();
+    $stmt = db()->prepare('INSERT INTO homepage_sections (section_key,title,subtitle,image_path,cta_primary_label,cta_primary_url,cta_secondary_label,cta_secondary_url,content_json,is_visible,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE title=VALUES(title), subtitle=VALUES(subtitle), image_path=VALUES(image_path), cta_primary_label=VALUES(cta_primary_label), cta_primary_url=VALUES(cta_primary_url), cta_secondary_label=VALUES(cta_secondary_label), cta_secondary_url=VALUES(cta_secondary_url), content_json=VALUES(content_json), is_visible=VALUES(is_visible), sort_order=VALUES(sort_order), updated_at=NOW()');
+    $stmt->execute([
+        'homepage',
+        clean_string($data['heroTitle'] ?? '', 255),
+        clean_string($data['heroSubtitle'] ?? '', 1000),
+        clean_string($data['heroImage'] ?? '', 500),
+        clean_string($data['primaryCtaLabel'] ?? '', 120),
+        clean_string($data['primaryCtaHref'] ?? '', 255),
+        clean_string($data['secondaryCtaLabel'] ?? '', 120),
+        clean_string($data['secondaryCtaHref'] ?? '', 255),
+        json_encode($data['content'] ?? []),
+        !empty($data['isVisible']) ? 1 : 0,
+        1,
+    ]);
+    ok([], 'Homepage saved.');
+}
+
+function handle_admin_service_content_get(): void {
+    require_admin();
+    ok(cms_service_payload(null));
+}
+
+function handle_admin_service_content_post(): void {
+    require_admin();
+    $data = read_json();
+    require_fields($data, ['slug', 'title']);
+    $stmt = db()->prepare('INSERT INTO service_page_content (slug,title,subtitle,hero_image,sections_json,pricing_text,faqs_json,seo_title,seo_description,is_active) VALUES (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE title=VALUES(title), subtitle=VALUES(subtitle), hero_image=VALUES(hero_image), sections_json=VALUES(sections_json), pricing_text=VALUES(pricing_text), faqs_json=VALUES(faqs_json), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), is_active=VALUES(is_active), updated_at=NOW()');
+    $stmt->execute([
+        clean_string($data['slug'], 160),
+        clean_string($data['title'], 255),
+        clean_string($data['subtitle'] ?? '', 2000),
+        clean_string($data['heroImage'] ?? '', 500),
+        json_encode($data['sections'] ?? []),
+        clean_string($data['pricingText'] ?? '', 1000),
+        json_encode($data['faqs'] ?? []),
+        clean_string($data['seoTitle'] ?? '', 255),
+        clean_string($data['seoDescription'] ?? '', 1000),
+        !isset($data['isActive']) || $data['isActive'] ? 1 : 0,
+    ]);
+    ok([], 'Service content saved.');
+}
+
+function handle_admin_pricing_get(): void {
+    require_admin();
+    $rows = db()->query('SELECT * FROM pricing_items ORDER BY visible_order ASC, id ASC')->fetchAll();
+    ok($rows);
+}
+
+function handle_admin_pricing_post(): void {
+    require_admin();
+    $data = read_json();
+    require_fields($data, ['serviceName', 'amountText']);
+    $id = (int) ($data['id'] ?? 0);
+    if ($id > 0) {
+        $stmt = db()->prepare('UPDATE pricing_items SET service_name=?, amount_text=?, note=?, features_json=?, visible_order=?, active=?, updated_at=NOW() WHERE id=?');
+        $stmt->execute([clean_string($data['serviceName'], 180), clean_string($data['amountText'], 80), clean_string($data['note'] ?? '', 2000), json_encode($data['features'] ?? []), (int) ($data['visibleOrder'] ?? 0), !empty($data['active']) ? 1 : 0, $id]);
+    } else {
+        $stmt = db()->prepare('INSERT INTO pricing_items (service_name, amount_text, note, features_json, visible_order, active) VALUES (?, ?, ?, ?, ?, ?)');
+        $stmt->execute([clean_string($data['serviceName'], 180), clean_string($data['amountText'], 80), clean_string($data['note'] ?? '', 2000), json_encode($data['features'] ?? []), (int) ($data['visibleOrder'] ?? 0), !empty($data['active']) ? 1 : 0]);
+    }
+    ok([], 'Pricing saved.');
+}
+
+function handle_admin_media_get(): void {
+    require_admin();
+    ok(db()->query('SELECT * FROM media_library ORDER BY created_at DESC LIMIT 200')->fetchAll());
+}
+
+function handle_admin_media_post(): void {
+    require_admin();
+    $info = save_media_file($_FILES['file'] ?? [], 'site');
+    $stmt = db()->prepare('INSERT INTO media_library (original_name, stored_name, mime_type, size, path, public_url, alt_text, usage_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path'], $info['public_url'], clean_string($_POST['alt_text'] ?? '', 255), clean_string($_POST['usage_key'] ?? '', 120)]);
+    ok($info, 'Media uploaded.');
+}
+
+function handle_admin_blog_get(): void {
+    require_admin();
+    ok(db()->query('SELECT * FROM blog_posts_cms ORDER BY updated_at DESC LIMIT 200')->fetchAll());
+}
+
+function handle_admin_blog_post(): void {
+    require_admin();
+    $data = read_json();
+    require_fields($data, ['slug', 'title']);
+    $stmt = db()->prepare('INSERT INTO blog_posts_cms (slug,title,summary,featured_image,content,seo_title,seo_description,published) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE title=VALUES(title), summary=VALUES(summary), featured_image=VALUES(featured_image), content=VALUES(content), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), published=VALUES(published), updated_at=NOW()');
+    $stmt->execute([clean_string($data['slug'], 180), clean_string($data['title'], 255), clean_string($data['summary'] ?? '', 2000), clean_string($data['featuredImage'] ?? '', 500), (string) ($data['content'] ?? ''), clean_string($data['seoTitle'] ?? '', 255), clean_string($data['seoDescription'] ?? '', 1000), !empty($data['published']) ? 1 : 0]);
+    ok([], 'Blog post saved.');
+}
+
+function handle_admin_local_seo_get(): void {
+    require_admin();
+    ok(db()->query('SELECT * FROM local_seo_pages ORDER BY city, slug')->fetchAll());
+}
+
+function handle_admin_local_seo_post(): void {
+    require_admin();
+    $data = read_json();
+    require_fields($data, ['city', 'slug', 'title']);
+    $stmt = db()->prepare('INSERT INTO local_seo_pages (city,slug,title,body_content,meta_title,meta_description,image_path,active) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE city=VALUES(city), title=VALUES(title), body_content=VALUES(body_content), meta_title=VALUES(meta_title), meta_description=VALUES(meta_description), image_path=VALUES(image_path), active=VALUES(active), updated_at=NOW()');
+    $stmt->execute([clean_string($data['city'], 120), clean_string($data['slug'], 180), clean_string($data['title'], 255), (string) ($data['bodyContent'] ?? ''), clean_string($data['metaTitle'] ?? '', 255), clean_string($data['metaDescription'] ?? '', 1000), clean_string($data['imagePath'] ?? '', 500), !empty($data['active']) ? 1 : 0]);
+    ok([], 'Local SEO page saved.');
+}
+
+function handle_admin_integrations_get(): void {
+    require_admin();
+    ok(db()->query('SELECT setting_key, setting_value, setting_group, is_secret, updated_at FROM integration_settings ORDER BY setting_group, setting_key')->fetchAll());
+}
+
+function handle_admin_integrations_post(): void {
+    require_admin();
+    $data = read_json();
+    foreach (($data['settings'] ?? []) as $setting) {
+        $stmt = db()->prepare('INSERT INTO integration_settings (setting_key, setting_value, setting_group, is_secret) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value), setting_group=VALUES(setting_group), is_secret=VALUES(is_secret), updated_at=NOW()');
+        $stmt->execute([clean_string($setting['key'] ?? '', 140), (string) ($setting['value'] ?? ''), clean_string($setting['group'] ?? 'general', 80), !empty($setting['secret']) ? 1 : 0]);
+    }
+    ok([], 'Integration settings saved.');
+}
+
+function handle_admin_login(): void {
+    rate_limit('admin_login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 8, 300);
+    $data = read_json();
+    require_fields($data, ['email', 'password']);
+    $stmt = db()->prepare('SELECT * FROM admin_users WHERE email = ? LIMIT 1');
+    $stmt->execute([strtolower(clean_string($data['email'], 180))]);
+    $admin = $stmt->fetch();
+    if (!$admin || !password_verify((string) $data['password'], $admin['password_hash'])) fail('Invalid admin login.', 401);
+    $summary = ['id' => (int) $admin['id'], 'email' => $admin['email'], 'full_name' => $admin['full_name']];
+    $token = create_admin_token($summary);
+    set_auth_cookie('admin_token', $token, 60 * 60 * 12);
+    ok(['token' => $token, 'admin' => $summary]);
+}
+
+function handle_admin_stats(): void {
+    require_admin();
+    $queries = [
+        'new_leads_today' => "SELECT COUNT(*) c FROM quick_leads WHERE DATE(created_at)=CURDATE()",
+        'new_itr_requests' => "SELECT COUNT(*) c FROM service_requests WHERE service_type LIKE '%itr%' AND DATE(created_at)=CURDATE()",
+        'documents_pending' => "SELECT COUNT(*) c FROM service_requests WHERE status='Documents pending'",
+        'payments_pending' => "SELECT COUNT(*) c FROM payments WHERE status='Payment pending'",
+        'manual_payments_to_verify' => "SELECT COUNT(*) c FROM manual_payment_screenshots WHERE status='Payment verification pending'",
+        'in_progress' => "SELECT COUNT(*) c FROM service_requests WHERE status IN ('Under review','Filing in progress')",
+        'completed' => "SELECT COUNT(*) c FROM service_requests WHERE status='Completed'",
+        'quick_phone_leads' => "SELECT COUNT(*) c FROM quick_leads"
+    ];
+    $stats = [];
+    foreach ($queries as $key => $sql) {
+        $stats[$key] = (int) db()->query($sql)->fetch()['c'];
+    }
+    ok($stats);
+}
+
+function handle_admin_leads(): void {
+    require_admin();
+    $stmt = db()->query('SELECT * FROM quick_leads ORDER BY created_at DESC LIMIT 200');
+    ok($stmt->fetchAll());
+}
+
+function handle_admin_users(): void {
+    require_admin();
+    $stmt = db()->query('SELECT id, tax_help_id, full_name, phone, email, created_at FROM users ORDER BY created_at DESC LIMIT 200');
+    ok($stmt->fetchAll());
+}
+
+function handle_admin_requests(): void {
+    require_admin();
+    $stmt = db()->query('SELECT sr.*, u.tax_help_id, u.full_name, u.phone FROM service_requests sr JOIN users u ON u.id=sr.user_id ORDER BY sr.created_at DESC LIMIT 300');
+    ok($stmt->fetchAll());
+}
+
+function handle_admin_request_detail(int $id): void {
+    require_admin();
+    $stmt = db()->prepare('SELECT sr.*, u.tax_help_id, u.full_name, u.phone, u.email FROM service_requests sr JOIN users u ON u.id=sr.user_id WHERE sr.id=?');
+    $stmt->execute([$id]);
+    $request = $stmt->fetch();
+    if (!$request) fail('Request not found.', 404);
+    $docs = db()->prepare('SELECT * FROM documents WHERE request_id=? ORDER BY created_at DESC');
+    $docs->execute([$id]);
+    $request['documents'] = $docs->fetchAll();
+    ok($request);
+}
+
+function handle_admin_request_status(int $id): void {
+    $admin = require_admin();
+    $data = read_json();
+    require_fields($data, ['status']);
+    $status = clean_string($data['status'], 80);
+    db()->prepare('UPDATE service_requests SET status=? WHERE id=?')->execute([$status, $id]);
+    db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$id, $status, clean_string($data['note'] ?? '', 1000)]);
+    audit_log($admin['id'], null, 'request_status_update', "Request {$id}: {$status}");
+    ok([], 'Status updated.');
+}
+
+function handle_admin_note(int $id): void {
+    $admin = require_admin();
+    $data = read_json();
+    require_fields($data, ['note']);
+    db()->prepare('INSERT INTO admin_notes (request_id, admin_id, note) VALUES (?, ?, ?)')->execute([$id, $admin['id'], clean_string($data['note'], 2000)]);
+    ok([], 'Note added.');
+}
+
+function handle_admin_manual_payment(int $paymentId, bool $verified): void {
+    $admin = require_admin();
+    $status = $verified ? 'Payment received' : 'Payment rejected';
+    db()->prepare('UPDATE payments SET status=? WHERE id=?')->execute([$status, $paymentId]);
+    db()->prepare('UPDATE manual_payment_screenshots SET status=?, verified_at=NOW() WHERE payment_id=?')->execute([$status, $paymentId]);
+    audit_log($admin['id'], null, 'manual_payment_' . ($verified ? 'verified' : 'rejected'), "Payment {$paymentId}");
+    ok([], 'Payment updated.');
+}
+
+function handle_admin_document_download(int $id): void {
+    require_admin();
+    $stmt = db()->prepare('SELECT * FROM documents WHERE id=?');
+    $stmt->execute([$id]);
+    $doc = $stmt->fetch();
+    if (!$doc || !is_file($doc['path'])) fail('Document not found.', 404);
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="' . basename($doc['original_name']) . '"');
+    header('Content-Length: ' . filesize($doc['path']));
+    readfile($doc['path']);
+    exit;
+}
+
+function handle_admin_export_leads(): void {
+    require_admin();
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="leads.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['id', 'name', 'phone', 'service', 'message', 'status', 'created_at']);
+    foreach (db()->query('SELECT id, name, phone, service, message, status, created_at FROM quick_leads ORDER BY created_at DESC') as $row) {
+        fputcsv($out, $row);
+    }
+    fclose($out);
+    exit;
+}

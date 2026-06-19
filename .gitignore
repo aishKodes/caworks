@@ -1,0 +1,17 @@
+node_modules
+.next
+dist
+out
+
+.env
+.env.local
+.env.production
+.env.development
+
+backend-hostinger/config.php
+
+backend-hostinger/uploads/*
+!backend-hostinger/uploads/.htaccess
+!backend-hostinger/uploads/index.html
+
+.DS_Store

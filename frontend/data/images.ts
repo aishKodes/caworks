@@ -1,0 +1,22 @@
+export const imageConfig = {
+  logo: "/images/vedanath-logo.svg",
+  heroPremium: "/images/hero-premium-consulting.jpg",
+  heroDashboard: "/images/hero-dashboard.png",
+  individualItr: "/images/individual-itr-filing.jpg",
+  smallBusiness: "/images/small-business-support.jpg",
+  compliance: "/images/compliance-consulting.jpg",
+  uploadWorkflow: "/images/upload-payment-tracking.jpg",
+  contact: "/images/contact-consulting-office.jpg",
+  blogThumbTax: "/images/blog-tax-guide.jpg",
+  blogThumbBusiness: "/images/blog-business-guide.jpg",
+  taxHelp: "/images/tax-help-placeholder.jpg",
+  documentUpload: "/images/document-upload.jpg",
+  office: "/images/office-placeholder.jpg",
+  personOne: "/images/person-placeholder-1.jpg",
+  personTwo: "/images/person-placeholder-2.jpg",
+  payment: "/images/payment-placeholder.jpg",
+  trustSecure: "/images/trust-secure.svg",
+  trustRazorpay: "/images/trust-razorpay.svg",
+  trustWhatsapp: "/images/trust-whatsapp.svg",
+  trustPrivacy: "/images/trust-privacy.svg"
+} as const;
