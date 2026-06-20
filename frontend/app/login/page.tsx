@@ -5,7 +5,8 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Login",
   description: "Login with phone, email or Tax Help ID to track requests.",
-  path: "/login"
+  path: "/login",
+  noIndex: true
 });
 
 export default function LoginPage() {

@@ -13,12 +13,12 @@ export function CTASection({
 }) {
   return (
     <section className={cn("container-shell", className)}>
-      <div className="overflow-hidden rounded-3xl bg-charcoal-900 p-6 text-white shadow-premium md:p-10">
+      <div className="min-w-0 overflow-hidden rounded-3xl bg-charcoal-900 p-6 text-white shadow-premium md:p-10">
         <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-100">Simple next step</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{title}</h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/75">{description}</p>
+            <h2 className="mt-3 break-words text-3xl font-semibold tracking-tight md:text-4xl">{title}</h2>
+            <p className="mt-4 max-w-2xl break-words text-base leading-7 text-white/75">{description}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
             <Link href="/start" className="inline-flex justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-charcoal-900 transition hover:bg-brand-50">Start ITR Filing</Link>

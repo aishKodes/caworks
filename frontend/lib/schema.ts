@@ -12,6 +12,7 @@ export function getOrganizationSchema() {
     legalName: siteConfig.registeredBusinessName,
     url: siteConfig.siteUrl,
     logo: absoluteUrl(siteConfig.images.logoMark),
+    image: absoluteUrl(siteConfig.images.ogDefault),
     contactPoint: {
       "@type": "ContactPoint",
       telephone: siteConfig.phone,
@@ -29,7 +30,7 @@ export function getProfessionalServiceSchema() {
     name: siteConfig.name,
     legalName: siteConfig.registeredBusinessName,
     url: siteConfig.siteUrl,
-    image: absoluteUrl(siteConfig.images.heroPremium),
+    image: absoluteUrl(siteConfig.images.ogDefault),
     telephone: siteConfig.phone,
     email: siteConfig.email,
     priceRange: "₹₹",
@@ -40,6 +41,20 @@ export function getProfessionalServiceSchema() {
       addressLocality: siteConfig.city,
       addressRegion: siteConfig.region,
       addressCountry: siteConfig.country
+    }
+  };
+}
+
+export function getWebSiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.siteUrl,
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: absoluteUrl(siteConfig.images.logoMark)
     }
   };
 }
@@ -107,6 +122,8 @@ export function getArticleSchema(post: BlogPost) {
         "@type": "ImageObject",
         url: absoluteUrl(siteConfig.images.logoMark)
       }
-    }
+    },
+    image: absoluteUrl(post.image),
+    mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`)
   };
 }

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { BlogCard } from "@/components/BlogCard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
+import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { blogPosts } from "@/data/blogPosts";
 import { buildMetadata } from "@/lib/seo";
+import { getBreadcrumbSchema } from "@/lib/schema";
 
 export const metadata: Metadata = buildMetadata({
   title: "Guides",
@@ -14,6 +16,7 @@ export const metadata: Metadata = buildMetadata({
 export default function BlogPage() {
   return (
     <>
+      <SEOJsonLd data={getBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "Guides", path: "/blog" }])} />
       <Breadcrumbs items={[{ name: "Guides", href: "/blog" }]} />
       <section className="container-shell pb-16 pt-8">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Guides</p>

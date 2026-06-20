@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { MobileBottomCTA } from "@/components/MobileBottomCTA";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { siteConfig } from "@/data/site.config";
-import { getOrganizationSchema, getProfessionalServiceSchema } from "@/lib/schema";
+import { getOrganizationSchema, getProfessionalServiceSchema, getWebSiteSchema } from "@/lib/schema";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     url: siteConfig.siteUrl,
     images: [
       {
-        url: siteConfig.images.heroPremium,
+        url: siteConfig.images.ogDefault,
         width: 1200,
         height: 630,
         alt: siteConfig.defaultTitle
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.defaultTitle,
     description: siteConfig.description,
-    images: [siteConfig.images.heroPremium]
+    images: [siteConfig.images.ogDefault]
   }
 };
 
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en-IN">
       <body>
-        <SEOJsonLd data={[getOrganizationSchema(), getProfessionalServiceSchema()]} />
+        <SEOJsonLd data={[getOrganizationSchema(), getProfessionalServiceSchema(), getWebSiteSchema()]} />
         <Header />
         <main className="pb-20 md:pb-0">{children}</main>
         <Footer />

@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { whatsappMessages } from "@/data/site.config";
 import { serviceOptions } from "@/data/services";
 import { submitQuickLead } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -134,6 +136,11 @@ export function QuickLeadForm({ sourcePage = "homepage", compact = false }: { so
       <p aria-live="polite" className={`mt-3 min-h-6 text-sm font-medium ${status === "success" ? "text-green-700" : "text-brand-700"}`}>
         {message}
       </p>
+      {status === "success" || status === "error" ? (
+        <WhatsAppButton message={whatsappMessages.homepage} variant="outline" className="mt-3 w-full">
+          Need help? WhatsApp us
+        </WhatsAppButton>
+      ) : null}
     </form>
   );
 }

@@ -15,20 +15,22 @@ export function WhatsAppButton({
   className,
   variant = "outline"
 }: WhatsAppButtonProps) {
+  const url = getWhatsAppUrl(message);
   const styles = {
-    solid: "bg-brand-600 text-white shadow-red hover:bg-brand-700",
+    solid: "bg-[#128c4a] text-white shadow-[0_16px_34px_rgba(18,140,74,0.22)] hover:bg-[#0f7a40]",
     outline:
-      "border border-charcoal-900/10 bg-white text-charcoal-900 shadow-soft hover:border-brand-600 hover:text-brand-700",
+      "border border-[#128c4a]/25 bg-white text-[#0f7a40] shadow-soft hover:border-[#128c4a] hover:bg-[#f0fff6]",
     light: "border border-white/25 bg-white/10 text-white hover:bg-white/20"
   };
 
   return (
     <Link
-      href={getWhatsAppUrl(message)}
-      target="_blank"
-      rel="noreferrer"
+      href={url || "/contact"}
+      target={url ? "_blank" : undefined}
+      rel={url ? "noopener noreferrer" : undefined}
+      aria-label={url ? "Open WhatsApp support" : "Open contact page"}
       className={cn(
-        "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition",
+        "inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition",
         styles[variant],
         className
       )}

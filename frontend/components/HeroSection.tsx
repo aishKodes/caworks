@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { QuickLeadForm } from "@/components/QuickLeadForm";
-import { siteConfig } from "@/data/site.config";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { siteConfig, whatsappMessages } from "@/data/site.config";
 
 const trustLine = "Upload documents · Pay securely · Track status · Get WhatsApp support";
 
@@ -36,13 +37,16 @@ export function HeroSection({
           <p className="mt-6 max-w-2xl break-words text-lg leading-8 text-muted">
             {subtitle}
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href={primaryCtaHref} className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
               {primaryCtaLabel}
             </Link>
             <Link href={secondaryCtaHref} className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
               {secondaryCtaLabel}
             </Link>
+            <WhatsAppButton message={whatsappMessages.homepage} className="px-6 py-3.5" variant="solid">
+              Talk on WhatsApp
+            </WhatsAppButton>
           </div>
           <div className="mt-6 max-w-full break-words rounded-2xl border border-charcoal-900/10 bg-white/80 px-4 py-3 text-sm font-semibold leading-6 text-charcoal-700 shadow-sm backdrop-blur">
             {trustLine}

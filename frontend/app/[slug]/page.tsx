@@ -114,7 +114,7 @@ async function PricingPage() {
       <section className="container-shell pb-16 pt-8">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Pricing</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Starting prices with clear confirmation.</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">Final fee depends on documents, income sources and complexity. We will confirm before work starts.</p>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">Final fee depends on documents, income type and complexity. We confirm the fee before starting work.</p>
         <div className="mt-9"><PricingCards plans={pricingContent} /></div>
         <div className="mt-10 rounded-2xl bg-brand-50 p-5 text-sm leading-7 text-brand-900">
           We do not make false refund promises. Tax, refund or payable amount depends on official records and eligibility.

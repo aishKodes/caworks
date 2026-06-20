@@ -6,7 +6,8 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "My Requests",
   description: "View tax and paperwork requests.",
-  path: "/dashboard/requests"
+  path: "/dashboard/requests",
+  noIndex: true
 });
 
 export default function RequestsPage() {

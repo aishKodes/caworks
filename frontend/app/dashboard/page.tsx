@@ -6,7 +6,8 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Dashboard",
   description: "User dashboard for requests, documents, payments and status timeline.",
-  path: "/dashboard"
+  path: "/dashboard",
+  noIndex: true
 });
 
 export default function DashboardPage() {

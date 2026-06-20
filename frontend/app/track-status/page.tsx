@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { StatusTimeline } from "@/components/StatusTimeline";
-import { siteConfig } from "@/data/site.config";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -21,6 +22,7 @@ export default function TrackStatusPage() {
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <Link href="/login" className="rounded-full bg-brand-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-red">Login to track</Link>
           <Link href="/quick-contact" className="rounded-full border border-charcoal-900/10 px-6 py-3 text-center text-sm font-semibold text-charcoal-900">Enter phone number</Link>
+          <WhatsAppButton message={whatsappMessages.support}>WhatsApp Support</WhatsAppButton>
         </div>
         <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
           <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />

@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { whatsappMessages } from "@/data/site.config";
 import { uploadDocuments } from "@/lib/api";
 
 const checklists: Record<string, string[]> = {
@@ -99,6 +101,11 @@ export function DocumentUploadForm({
       <p aria-live="polite" className={`mt-4 min-h-6 text-sm font-medium ${status === "success" ? "text-green-700" : "text-brand-700"}`}>
         {message}
       </p>
+      {status === "success" || status === "error" ? (
+        <WhatsAppButton message={whatsappMessages.documentUpload} variant="outline" className="mt-3 w-full">
+          Send Documents on WhatsApp
+        </WhatsAppButton>
+      ) : null}
     </form>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getWhatsAppUrl } from "@/data/site.config";
+import { getWhatsAppUrl, whatsappMessages } from "@/data/site.config";
 import { login } from "@/lib/api";
 
 const inputClass =
@@ -13,6 +13,7 @@ export function LoginForm() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const passwordHelpUrl = getWhatsAppUrl(`${whatsappMessages.support} I need help resetting my password.`);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +56,7 @@ export function LoginForm() {
       <p aria-live="polite" className="mt-4 min-h-6 text-sm font-medium text-brand-700">{message}</p>
       <div className="mt-5 flex flex-col gap-2 text-sm text-muted">
         <Link href="/signup" className="font-semibold text-brand-700">Create a new account</Link>
-        <Link href={getWhatsAppUrl("Hello, I need help resetting my password.")} target="_blank" rel="noreferrer" className="font-semibold text-charcoal-900">
+        <Link href={passwordHelpUrl || "/contact"} target={passwordHelpUrl ? "_blank" : undefined} rel={passwordHelpUrl ? "noopener noreferrer" : undefined} className="font-semibold text-charcoal-900">
           Forgot password? Contact support on WhatsApp
         </Link>
       </div>

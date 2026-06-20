@@ -50,7 +50,7 @@ export const serviceFaqs: FAQItem[] = [
   {
     question: "Will I see the fee before work starts?",
     answer:
-      "Yes. Final fee depends on your documents, income sources and complexity. We confirm before work starts."
+      "Yes. Final fee depends on your documents, income type and complexity. We confirm the fee before starting work."
   },
   {
     question: "Can I use WhatsApp?",

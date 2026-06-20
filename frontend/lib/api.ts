@@ -85,11 +85,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${base}${path}`, {
-    ...options,
-    headers,
-    credentials: "include"
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${base}${path}`, {
+      ...options,
+      headers,
+      credentials: "include"
+    });
+  } catch {
+    return {
+      ok: false,
+      message: "Something went wrong. Please try again or contact us on WhatsApp."
+    };
+  }
 
   let payload: ApiResult<T>;
   try {

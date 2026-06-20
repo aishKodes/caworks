@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { DocumentUploadForm } from "@/components/DocumentUploadForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { siteConfig } from "@/data/site.config";
+import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -23,7 +23,7 @@ export default function UploadDocumentsPage() {
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Upload documents from your phone.</h1>
           <p className="mt-5 text-lg leading-8 text-charcoal-700">Take a photo or upload PDF files. You can also send documents on WhatsApp if you need help.</p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <WhatsAppButton />
+            <WhatsAppButton message={whatsappMessages.documentUpload}>Send Documents on WhatsApp</WhatsAppButton>
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
             <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />

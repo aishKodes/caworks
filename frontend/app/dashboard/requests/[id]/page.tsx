@@ -8,7 +8,8 @@ type PageProps = { params: Promise<{ id: string }> };
 export const metadata: Metadata = buildMetadata({
   title: "Request Details",
   description: "View request details, documents, payment and status timeline.",
-  path: "/dashboard/requests"
+  path: "/dashboard/requests",
+  noIndex: true
 });
 
 export default async function RequestDetailPage({ params }: PageProps) {

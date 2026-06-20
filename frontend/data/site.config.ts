@@ -26,6 +26,23 @@ export const siteConfig = {
   images: imageConfig
 } as const;
 
-export function getWhatsAppUrl(message = "Hello, I need help with tax or business paperwork.") {
-  return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
+export const whatsappMessages = {
+  homepage: "Hello VB Consultants, I need help with tax, GST or business paperwork. Please contact me.",
+  salaryItr: "Hello VB Consultants, I want help with Salary ITR filing.",
+  documentUpload: "Hello VB Consultants, I want to send documents for my request.",
+  gst: "Hello VB Consultants, I need help with GST filing or registration.",
+  notice: "Hello VB Consultants, I need help with a tax notice.",
+  loan: "Hello VB Consultants, I need help with loan/project report or subsidy paperwork.",
+  support: "Hello VB Consultants, I need support with my request."
+} as const;
+
+export function getCleanWhatsAppNumber() {
+  const digits = siteConfig.whatsappNumber.replace(/\D/g, "");
+  return digits.length >= 10 ? digits : "";
+}
+
+export function getWhatsAppUrl(message: string = whatsappMessages.homepage) {
+  const number = getCleanWhatsAppNumber();
+  if (!number) return "";
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }

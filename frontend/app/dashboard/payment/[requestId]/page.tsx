@@ -8,7 +8,8 @@ type PageProps = { params: Promise<{ requestId: string }> };
 export const metadata: Metadata = buildMetadata({
   title: "Payment",
   description: "Choose Razorpay online payment or manual payment screenshot.",
-  path: "/dashboard/payment"
+  path: "/dashboard/payment",
+  noIndex: true
 });
 
 export default async function PaymentPage({ params }: PageProps) {

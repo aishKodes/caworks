@@ -18,6 +18,29 @@ const legalLinks = [
   { href: "/refund-policy", label: "Refund Policy" }
 ];
 
+const footerServiceSlugs = [
+  "salary-itr-filing",
+  "itr-1-filing",
+  "itr-2-capital-gains-filing",
+  "gst-registration",
+  "gst-return-filing",
+  "bookkeeping",
+  "tds-return-filing",
+  "payroll-compliance",
+  "tax-notice-help",
+  "business-registration",
+  "msme-udyam-registration",
+  "company-llp-compliance",
+  "loan-project-report",
+  "business-loan-paperwork",
+  "subsidy-scheme-guidance",
+  "digital-signature-certificate-support"
+];
+
+const footerServices = footerServiceSlugs
+  .map((slug) => services.find((service) => service.slug === slug))
+  .filter((service): service is NonNullable<typeof service> => Boolean(service));
+
 export function Footer() {
   return (
     <footer className="border-t border-charcoal-900/10 bg-charcoal-900 pb-20 text-white md:pb-0">
@@ -49,8 +72,8 @@ export function Footer() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">Services</h2>
-              <ul className="mt-4 space-y-3">
-                {services.slice(0, 12).map((service) => (
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {footerServices.map((service) => (
                   <li key={service.slug}>
                     <Link href={`/${service.slug}`} className="text-sm text-white/70 transition hover:text-white">{service.label}</Link>
                   </li>

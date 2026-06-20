@@ -7,13 +7,15 @@ import { HeroSection } from "@/components/HeroSection";
 import { PricingCards } from "@/components/PricingCards";
 import { ProcessSteps } from "@/components/ProcessSteps";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { TestimonialCards } from "@/components/TestimonialCards";
 import { TrustBadges } from "@/components/TrustBadges";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { homeFaqs } from "@/data/faqs";
-import { siteConfig } from "@/data/site.config";
+import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { getHomepageContent, getPricingContent } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
+import { getBreadcrumbSchema, getFAQSchema } from "@/lib/schema";
 
 const popularVisualServices = [
   {
@@ -95,9 +97,11 @@ export const metadata: Metadata = buildMetadata({
 
 export default async function HomePage() {
   const [homepageContent, pricingContent] = await Promise.all([getHomepageContent(), getPricingContent()]);
+  const faqContent = homepageContent.faqs.length ? homepageContent.faqs : homeFaqs;
 
   return (
     <>
+      <SEOJsonLd data={[getFAQSchema(faqContent), getBreadcrumbSchema([{ name: "Home", path: "/" }])]} />
       <HeroSection
         title={homepageContent.heroTitle}
         subtitle={homepageContent.heroSubtitle}
@@ -173,7 +177,7 @@ export default async function HomePage() {
               <Link href="/start" className="inline-flex justify-center rounded-full bg-brand-600 px-7 py-4 text-base font-semibold text-white shadow-red transition hover:bg-brand-700">
                 Start Salary ITR
               </Link>
-              <WhatsAppButton />
+              <WhatsAppButton message={whatsappMessages.salaryItr} />
             </div>
           </div>
         </div>
@@ -293,7 +297,7 @@ export default async function HomePage() {
       <section className="container-shell section-padding">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <SectionHeader eyebrow="FAQ" title="Simple answers before you start" />
-          <FAQAccordion faqs={homepageContent.faqs.length ? homepageContent.faqs : homeFaqs} />
+          <FAQAccordion faqs={faqContent} />
         </div>
       </section>
 

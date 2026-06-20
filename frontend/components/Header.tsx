@@ -3,9 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { siteConfig } from "@/data/site.config";
-import { services } from "@/data/services";
+import { services, type Service } from "@/data/services";
 import { cn } from "@/lib/utils";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
@@ -17,11 +17,62 @@ const links = [
   { href: "/contact", label: "Contact" }
 ];
 
-const menuServices = services.slice(0, 12);
+const menuGroups = [
+  {
+    title: "Individuals",
+    slugs: ["salary-itr-filing", "itr-1-filing", "itr-2-capital-gains-filing", "freelancer-business-itr", "tax-notice-help", "upload-documents", "track-status"]
+  },
+  {
+    title: "Business",
+    slugs: ["gst-registration", "gst-return-filing", "bookkeeping", "tds-return-filing", "payroll-compliance", "business-registration", "company-llp-compliance", "msme-udyam-registration", "loan-project-report", "subsidy-scheme-guidance"]
+  },
+  {
+    title: "More support",
+    slugs: ["business-loan-paperwork", "digital-signature-certificate-support", "pan-tan-assistance", "accounting-cleanup-support", "annual-compliance-support", "professional-tax-labour-compliance", "import-export-documentation-help", "general-tax-support"]
+  }
+] as const;
+
+function serviceBySlug(slug: string): Service | { slug: string; label: string; heroText: string } | null {
+  if (slug === "upload-documents") return { slug, label: "Document Upload", heroText: "Upload files or send documents from your phone." };
+  if (slug === "track-status") return { slug, label: "Track Status", heroText: "Check request, payment and document status." };
+  return services.find((service) => service.slug === slug) || null;
+}
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const servicesMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const groupedServices = useMemo(
+    () => menuGroups.map((group) => ({ ...group, items: group.slugs.map(serviceBySlug).filter(Boolean) as Array<Service | { slug: string; label: string; heroText: string }> })),
+    []
+  );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setServicesOpen(false);
+        setOpen(false);
+        setMobileServicesOpen(false);
+      }
+    }
+
+    function onPointerDown(event: MouseEvent | TouchEvent) {
+      if (servicesMenuRef.current && !servicesMenuRef.current.contains(event.target as Node)) {
+        setServicesOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-charcoal-900/10 bg-paper/90 backdrop-blur-xl">
@@ -49,20 +100,41 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <div className="group relative">
-            <button type="button" className="rounded-full px-4 py-2 text-sm font-semibold text-charcoal-900 transition hover:bg-white hover:shadow-soft">
-              Services
+          <div ref={servicesMenuRef} className="relative" onMouseEnter={() => setServicesOpen(true)} onMouseLeave={() => setServicesOpen(false)}>
+            <button
+              type="button"
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-semibold text-charcoal-900 transition hover:bg-white hover:shadow-soft",
+                servicesOpen && "bg-white shadow-soft"
+              )}
+              aria-haspopup="menu"
+              aria-expanded={servicesOpen}
+              onClick={() => setServicesOpen((value) => !value)}
+            >
+              Services <span aria-hidden="true" className="ml-1 text-xs">⌄</span>
             </button>
-            <div className="invisible absolute left-0 top-full w-[660px] translate-y-3 rounded-3xl border border-charcoal-900/10 bg-white p-4 opacity-0 shadow-premium transition group-hover:visible group-hover:translate-y-2 group-hover:opacity-100">
-              <div className="grid grid-cols-3 gap-2">
-                {menuServices.map((service) => (
-                  <Link key={service.slug} href={`/${service.slug}`} className="rounded-2xl p-3 transition hover:bg-brand-50">
-                    <span className="block text-sm font-semibold text-charcoal-900">{service.label}</span>
-                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted">{service.heroText}</span>
-                  </Link>
-                ))}
+            {servicesOpen ? (
+              <div
+                className="absolute left-1/2 top-full w-[780px] max-w-[calc(100vw-2rem)] -translate-x-1/2 translate-y-2 rounded-3xl border border-charcoal-900/10 bg-white p-5 opacity-100 shadow-premium transition"
+                role="menu"
+              >
+                <div className="grid gap-5 lg:grid-cols-3">
+                  {groupedServices.map((group) => (
+                    <div key={group.title}>
+                      <p className="px-3 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{group.title}</p>
+                      <div className="mt-2 grid gap-1">
+                        {group.items.map((service) => (
+                          <Link key={service.slug} href={`/${service.slug}`} role="menuitem" onClick={() => setServicesOpen(false)} className="rounded-2xl p-3 transition hover:bg-brand-50 focus:bg-brand-50">
+                            <span className="block text-sm font-semibold text-charcoal-900">{service.label}</span>
+                            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted">{service.heroText}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
           {links.slice(3).map((link) => (
             <Link
@@ -101,7 +173,7 @@ export function Header() {
 
       {open ? (
         <div className="border-t border-charcoal-900/10 bg-white lg:hidden">
-          <div className="container-shell py-4">
+          <div className="container-shell max-h-[calc(100vh-72px)] overflow-y-auto py-4">
             <div className="grid gap-2">
               {[...links, { href: "/upload-documents", label: "Upload Docs" }, { href: "/track-status", label: "Track Status" }, { href: "/login", label: "Login" }, { href: "/signup", label: "Signup" }].map((link) => (
                 <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">
@@ -109,13 +181,30 @@ export function Header() {
                 </Link>
               ))}
             </div>
-            <div className="mt-4 grid gap-1 rounded-2xl bg-paper p-3 sm:grid-cols-2">
-              {menuServices.slice(0, 10).map((service) => (
-                <Link key={service.slug} href={`/${service.slug}`} onClick={() => setOpen(false)} className="rounded-xl px-3 py-2 text-sm font-medium text-charcoal-900 hover:bg-white">
-                  {service.label}
-                </Link>
-              ))}
-            </div>
+            <button
+              type="button"
+              className="mt-4 flex w-full items-center justify-between rounded-2xl bg-paper px-4 py-3 text-left text-sm font-semibold text-charcoal-900"
+              aria-expanded={mobileServicesOpen}
+              onClick={() => setMobileServicesOpen((value) => !value)}
+            >
+              Services <span aria-hidden="true">{mobileServicesOpen ? "−" : "+"}</span>
+            </button>
+            {mobileServicesOpen ? (
+              <div className="mt-3 space-y-4 rounded-2xl bg-paper p-3">
+                {groupedServices.map((group) => (
+                  <div key={group.title}>
+                    <p className="px-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{group.title}</p>
+                    <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                      {group.items.map((service) => (
+                        <Link key={service.slug} href={`/${service.slug}`} onClick={() => setOpen(false)} className="rounded-xl bg-white/70 px-3 py-3 text-sm font-medium text-charcoal-900 hover:bg-white">
+                          {service.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <WhatsAppButton className="mt-4 w-full" variant="solid" />
           </div>
         </div>

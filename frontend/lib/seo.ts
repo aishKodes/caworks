@@ -8,6 +8,7 @@ type MetadataInput = {
   image?: string;
   type?: "website" | "article";
   publishedTime?: string;
+  noIndex?: boolean;
 };
 
 export function absoluteUrl(path = "/") {
@@ -21,9 +22,10 @@ export function buildMetadata({
   title,
   description,
   path,
-  image = siteConfig.images.heroPremium,
+  image = siteConfig.images.ogDefault,
   type = "website",
-  publishedTime
+  publishedTime,
+  noIndex = false
 }: MetadataInput): Metadata {
   const url = absoluteUrl(path);
   const imageUrl = absoluteUrl(image);
@@ -57,8 +59,8 @@ export function buildMetadata({
       images: [imageUrl]
     },
     robots: {
-      index: true,
-      follow: true
+      index: !noIndex,
+      follow: !noIndex
     }
   };
 }

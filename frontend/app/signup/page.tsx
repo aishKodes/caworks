@@ -5,7 +5,8 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Signup",
   description: "Create an account to upload documents, pay and track requests.",
-  path: "/signup"
+  path: "/signup",
+  noIndex: true
 });
 
 export default function SignupPage() {

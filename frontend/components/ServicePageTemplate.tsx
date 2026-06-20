@@ -10,7 +10,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { ServiceRequestForm } from "@/components/ServiceRequestForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { getRelatedServices, type Service } from "@/data/services";
-import { siteConfig } from "@/data/site.config";
+import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { getBreadcrumbSchema, getFAQSchema, getServiceSchema } from "@/lib/schema";
 
 function getDefaultServiceImage(service: Service) {
@@ -21,6 +21,14 @@ function getDefaultServiceImage(service: Service) {
   if (service.category === "business") return siteConfig.images.gstConsultation;
   if (service.category === "support") return siteConfig.images.mobileUpload;
   return siteConfig.images.salaryItr;
+}
+
+function getWhatsAppMessage(service: Service) {
+  if (service.slug.includes("salary") || service.slug.includes("itr-1")) return whatsappMessages.salaryItr;
+  if (service.slug.includes("gst")) return whatsappMessages.gst;
+  if (service.slug.includes("notice")) return whatsappMessages.notice;
+  if (service.slug.includes("loan") || service.slug.includes("project") || service.slug.includes("subsidy")) return whatsappMessages.loan;
+  return `Hello VB Consultants, I need help with ${service.label}.`;
 }
 
 export function ServicePageTemplate({ service, heroImage }: { service: Service; heroImage?: string }) {
@@ -53,7 +61,7 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
             <Link href="/upload-documents" className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
               Upload Documents
             </Link>
-            <WhatsAppButton message={`Hello, I need help with ${service.label}.`} />
+            <WhatsAppButton message={getWhatsAppMessage(service)} />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
             <div className="relative aspect-[4/3]">
@@ -120,7 +128,7 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
           <div>
             <SectionHeader eyebrow="Pricing note" title="Fee is confirmed before work starts" description={service.priceNote} />
             <div className="mt-6 rounded-2xl bg-brand-50 p-5 text-sm leading-7 text-brand-900">
-              Final fee depends on documents, income sources and complexity. We do not make false refund promises.
+              Final fee depends on documents, income type and complexity. We do not make false refund promises.
             </div>
           </div>
           <div>
