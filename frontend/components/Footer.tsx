@@ -25,8 +25,8 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
-              <span className="relative flex h-11 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white">
-                <Image src={siteConfig.images.logo} alt="" fill sizes="48px" className="object-cover object-left" />
+              <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-white">
+                <Image src={siteConfig.images.logoMark} alt="" fill sizes="44px" className="object-contain p-1.5" />
               </span>
               <span>
                 <span className="block text-lg font-semibold tracking-tight">{siteConfig.name}</span>

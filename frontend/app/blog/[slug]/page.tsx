@@ -56,8 +56,8 @@ export default async function BlogPostPage({ params }: PageProps) {
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">{post.category}</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{post.title}</h1>
           <p className="mt-5 text-lg leading-8 text-muted">{post.excerpt}</p>
-          <div className="relative mt-8 h-72 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium sm:h-96">
-            <Image src={post.image} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
+          <div className="relative mt-8 aspect-video overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
+            <Image src={post.image} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover object-center" priority />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/40 to-transparent" />
           </div>
           <div className="mt-6 rounded-3xl bg-brand-50 p-5">

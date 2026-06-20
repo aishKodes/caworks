@@ -30,7 +30,7 @@ export function ContactSection() {
         </div>
       </div>
       <div className="overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-soft">
-        <Image src={siteConfig.images.gstConsultation} alt="Business paperwork support consultation" width={900} height={650} priority className="h-full min-h-[320px] w-full object-cover" />
+        <Image src={siteConfig.images.gstConsultation} alt="Business paperwork support consultation" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />
       </div>
     </div>
   );

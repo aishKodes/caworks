@@ -56,8 +56,8 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
             <WhatsAppButton message={`Hello, I need help with ${service.label}.`} />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
-            <div className="relative h-72 sm:h-96">
-              <Image src={image} alt={`${service.label} support`} fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover" priority />
+            <div className="relative aspect-[4/3]">
+              <Image src={image} alt={`${service.label} support`} fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover object-center" priority />
             </div>
             <div className="grid gap-3 p-4 sm:grid-cols-3">
               {["Clear fee before work", "Secure upload", "Status tracking"].map((item) => (

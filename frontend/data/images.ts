@@ -1,5 +1,8 @@
 export const imageConfig = {
-  logo: "/images/vbc/vb-consultants-logo-wide.png",
+  logo: "/images/vbc/logo-mark.svg",
+  logoMark: "/images/vbc/logo-mark.svg",
+  logoHorizontal: "/images/vbc/logo-horizontal.svg",
+  appleTouchIcon: "/apple-touch-icon.png",
   heroPremium: "/images/vbc/vbc-hero-senior-couple-simple-digital-tax.png",
   heroDashboard: "/images/hero-dashboard.png",
   individualItr: "/images/vbc/salary-itr-form-16-family.png",

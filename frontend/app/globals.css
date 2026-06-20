@@ -15,10 +15,12 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(190, 30, 45, 0.08), transparent 30rem),
     linear-gradient(180deg, #fffaf7 0%, #ffffff 34%, #fffaf7 100%);
@@ -44,7 +46,8 @@ a {
 
 .container-shell {
   margin-inline: auto;
-  width: min(100% - 2rem, 1180px);
+  width: min(calc(100% - 2rem), 1180px);
+  max-width: calc(100vw - 2rem);
 }
 
 .section-padding {

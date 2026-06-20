@@ -157,7 +157,7 @@ function AboutPage() {
           <p className="mt-5 text-lg leading-8 text-muted">The platform helps Indian salaried people, families, freelancers and small businesses upload documents, pay securely and track paperwork requests from a phone.</p>
           <div className="mt-8"><TrustBadges /></div>
         </div>
-        <Image src={siteConfig.images.gstConsultation} alt="VB Consultants business support consultation" width={900} height={700} className="rounded-3xl object-cover shadow-premium" />
+        <Image src={siteConfig.images.gstConsultation} alt="VB Consultants business support consultation" width={900} height={700} className="aspect-[4/3] h-auto w-full rounded-3xl object-cover object-center shadow-premium" />
       </section>
       <CTASection className="pb-16" />
     </>

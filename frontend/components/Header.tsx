@@ -27,8 +27,8 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-charcoal-900/10 bg-paper/90 backdrop-blur-xl">
       <div className="container-shell flex min-h-[72px] items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label={`${siteConfig.name} home`}>
-          <span className="relative flex h-11 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-charcoal-900/10">
-            <Image src={siteConfig.images.logo} alt="" fill priority sizes="48px" className="object-cover object-left" />
+          <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-charcoal-900/10">
+            <Image src={siteConfig.images.logoMark} alt="" fill priority sizes="44px" className="object-contain p-1.5" />
           </span>
           <span>
             <span className="block text-lg font-semibold tracking-tight text-charcoal-900">{siteConfig.name}</span>

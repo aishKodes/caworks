@@ -125,13 +125,13 @@ export default async function HomePage() {
               href={service.href}
               className="group overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-soft transition duration-200 hover:-translate-y-1 hover:border-brand-600/30 hover:shadow-premium"
             >
-              <div className="relative h-48 overflow-hidden bg-paper sm:h-56">
+              <div className="relative aspect-[4/3] overflow-hidden bg-paper">
                 <Image
                   src={service.image}
                   alt={`${service.title} support`}
                   fill
                   sizes="(min-width: 1024px) 31vw, (min-width: 768px) 47vw, 100vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  className="object-cover object-center transition duration-500 group-hover:scale-105"
                 />
               </div>
               <div className="p-5 md:p-6">
@@ -152,7 +152,7 @@ export default async function HomePage() {
               alt="Family preparing salary ITR with Form 16"
               width={1200}
               height={900}
-              className="h-[320px] w-full rounded-[1.45rem] object-cover sm:h-[420px]"
+              className="aspect-[4/3] h-auto w-full rounded-[1.45rem] object-cover object-center"
             />
           </div>
           <div>
@@ -193,7 +193,7 @@ export default async function HomePage() {
       <section className="bg-white/75 py-16 md:py-20">
         <div className="container-shell grid gap-8 lg:grid-cols-2">
           <div className="overflow-hidden rounded-[2rem] border border-charcoal-900/10 bg-white shadow-premium">
-            <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from phone" width={1200} height={900} className="h-72 w-full object-cover sm:h-96" />
+            <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from phone" width={1200} height={900} className="aspect-[4/3] h-auto w-full object-cover object-center" />
             <div className="p-6 md:p-8">
               <SectionHeader
                 eyebrow="Upload documents"
@@ -206,7 +206,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="overflow-hidden rounded-[2rem] border border-charcoal-900/10 bg-white shadow-premium">
-            <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={1200} height={900} className="h-72 w-full object-cover object-center sm:h-96" />
+            <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={1200} height={900} className="aspect-[4/3] h-auto w-full object-cover object-center" />
             <div className="p-6 md:p-8">
               <SectionHeader
                 eyebrow="Payment and tracking"
@@ -238,7 +238,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="overflow-hidden rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
-            <Image src={siteConfig.images.gstConsultation} alt="Business paperwork support consultation" width={1200} height={900} className="h-[340px] w-full rounded-[1.45rem] object-cover sm:h-[440px]" />
+            <Image src={siteConfig.images.gstConsultation} alt="Business paperwork support consultation" width={1200} height={900} className="aspect-[4/3] h-auto w-full rounded-[1.45rem] object-cover object-center" />
           </div>
         </div>
       </section>

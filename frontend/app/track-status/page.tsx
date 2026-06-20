@@ -23,7 +23,7 @@ export default function TrackStatusPage() {
           <Link href="/quick-contact" className="rounded-full border border-charcoal-900/10 px-6 py-3 text-center text-sm font-semibold text-charcoal-900">Enter phone number</Link>
         </div>
         <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
-          <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={900} height={650} priority className="h-[300px] w-full object-cover" />
+          <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />
         </div>
       </div>
       <div className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">

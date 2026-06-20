@@ -26,7 +26,7 @@ export default function UploadDocumentsPage() {
             <WhatsAppButton />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
-            <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="h-[320px] w-full object-cover" />
+            <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />
           </div>
         </div>
         <DocumentUploadForm checklistType="salary" />

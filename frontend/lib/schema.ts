@@ -11,7 +11,7 @@ export function getOrganizationSchema() {
     name: siteConfig.name,
     legalName: siteConfig.registeredBusinessName,
     url: siteConfig.siteUrl,
-    logo: absoluteUrl("/favicon.svg"),
+    logo: absoluteUrl(siteConfig.images.logoMark),
     contactPoint: {
       "@type": "ContactPoint",
       telephone: siteConfig.phone,
@@ -105,7 +105,7 @@ export function getArticleSchema(post: BlogPost) {
       name: siteConfig.name,
       logo: {
         "@type": "ImageObject",
-        url: absoluteUrl("/favicon.svg")
+        url: absoluteUrl(siteConfig.images.logoMark)
       }
     }
   };
