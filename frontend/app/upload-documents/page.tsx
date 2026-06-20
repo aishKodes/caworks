@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { DocumentUploadForm } from "@/components/DocumentUploadForm";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { siteConfig } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
@@ -20,9 +21,12 @@ export default function UploadDocumentsPage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Secure upload</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Upload documents from your phone.</h1>
-          <p className="mt-5 text-lg leading-8 text-muted">You can upload files after login. Direct public upload also shows graceful errors if backend is not configured.</p>
+          <p className="mt-5 text-lg leading-8 text-charcoal-700">Take a photo or upload PDF files. You can also send documents on WhatsApp if you need help.</p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <WhatsAppButton />
+          </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
-            <Image src={siteConfig.images.documentUpload} alt="Document upload placeholder" width={900} height={650} priority className="h-[320px] w-full object-cover" />
+            <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="h-[320px] w-full object-cover" />
           </div>
         </div>
         <DocumentUploadForm checklistType="salary" />

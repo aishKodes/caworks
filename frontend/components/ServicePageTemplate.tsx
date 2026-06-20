@@ -13,18 +13,19 @@ import { getRelatedServices, type Service } from "@/data/services";
 import { siteConfig } from "@/data/site.config";
 import { getBreadcrumbSchema, getFAQSchema, getServiceSchema } from "@/lib/schema";
 
-const serviceImages: Record<Service["category"], string> = {
-  itr: siteConfig.images.individualItr,
-  gst: siteConfig.images.smallBusiness,
-  business: siteConfig.images.compliance,
-  loan: siteConfig.images.smallBusiness,
-  local: siteConfig.images.contact,
-  support: siteConfig.images.uploadWorkflow
-};
+function getDefaultServiceImage(service: Service) {
+  if (service.slug.includes("notice")) return siteConfig.images.taxNotice;
+  if (service.slug.includes("loan") || service.slug.includes("project") || service.slug.includes("subsidy")) return siteConfig.images.loanProject;
+  if (service.slug.includes("gst")) return siteConfig.images.gstConsultation;
+  if (service.slug.includes("itr") || service.category === "itr") return siteConfig.images.salaryItr;
+  if (service.category === "business") return siteConfig.images.gstConsultation;
+  if (service.category === "support") return siteConfig.images.mobileUpload;
+  return siteConfig.images.salaryItr;
+}
 
 export function ServicePageTemplate({ service, heroImage }: { service: Service; heroImage?: string }) {
   const related = getRelatedServices(service.related).filter((item) => item.slug !== "upload-documents");
-  const image = heroImage || serviceImages[service.category];
+  const image = heroImage || getDefaultServiceImage(service);
 
   return (
     <>
@@ -44,7 +45,7 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">{service.category} support</p>
           <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{service.heroTitle}</h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">{service.heroText}</p>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">{service.heroText}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/start" className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
               Start request
@@ -55,14 +56,13 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
             <WhatsAppButton message={`Hello, I need help with ${service.label}.`} />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
-            <div className="relative h-64 sm:h-80">
-              <Image src={image} alt={`${service.label} support`} fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/70 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
-                {["Clear fee before work", "Secure upload", "Status tracking"].map((item) => (
-                  <div key={item} className="rounded-2xl border border-white/15 bg-white/92 p-4 text-sm font-semibold text-charcoal-900 shadow-soft backdrop-blur">{item}</div>
-                ))}
-              </div>
+            <div className="relative h-72 sm:h-96">
+              <Image src={image} alt={`${service.label} support`} fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover" priority />
+            </div>
+            <div className="grid gap-3 p-4 sm:grid-cols-3">
+              {["Clear fee before work", "Secure upload", "Status tracking"].map((item) => (
+                <div key={item} className="rounded-2xl border border-charcoal-900/10 bg-paper p-4 text-sm font-semibold text-charcoal-900">{item}</div>
+              ))}
             </div>
           </div>
         </div>

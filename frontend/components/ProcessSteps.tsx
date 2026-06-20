@@ -1,18 +1,17 @@
 const defaultSteps = [
-  "Choose service",
-  "Create account",
-  "Upload documents",
-  "Pay securely",
+  "Enter mobile number",
+  "Upload documents or send on WhatsApp",
+  "Pay online or upload payment screenshot",
   "Track status"
 ];
 
 export function ProcessSteps({ steps = defaultSteps }: { steps?: string[] }) {
   return (
-    <div className="grid gap-4 md:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {steps.map((step, index) => (
-        <div key={step} className="rounded-2xl border border-charcoal-900/10 bg-white p-5 shadow-soft">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-charcoal-900 text-sm font-semibold text-white">{index + 1}</div>
-          <h3 className="mt-4 text-base font-semibold leading-6 text-charcoal-900">{step}</h3>
+        <div key={step} className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-charcoal-900 text-base font-semibold text-white">{index + 1}</div>
+          <h3 className="mt-5 text-lg font-semibold leading-7 text-charcoal-900">{step}</h3>
         </div>
       ))}
     </div>

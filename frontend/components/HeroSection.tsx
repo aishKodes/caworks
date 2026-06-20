@@ -3,15 +3,11 @@ import Image from "next/image";
 import { QuickLeadForm } from "@/components/QuickLeadForm";
 import { siteConfig } from "@/data/site.config";
 
-const trustLine = ["Secure upload", "Razorpay payment", "No false refund promises"];
-const heroCards = [
-  ["Salary ITR launch", "₹199 onwards", "Final fee depends on documents."],
-  ["Request status", "Track from phone", "Upload, pay and follow updates."]
-];
+const trustLine = "Upload documents · Pay securely · Track status · Get WhatsApp support";
 
 export function HeroSection({
-  title = "Tax, GST and business paperwork made simple for Indian families and businesses.",
-  subtitle = "File ITR, get GST help, upload documents, pay securely and track your request — all from your phone.",
+  title = "Tax, GST and business paperwork made simple",
+  subtitle = "From ITR filing to GST, notices, loans and business paperwork — get simple support from your phone.",
   primaryCtaLabel = "Start ITR Filing",
   primaryCtaHref = "/start",
   secondaryCtaLabel = "Request Call Back",
@@ -28,13 +24,13 @@ export function HeroSection({
 }) {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(164,22,36,0.13),transparent_32rem),linear-gradient(135deg,#fffaf7_0%,#ffffff_48%,#f5f1ed_100%)]" />
-      <div className="container-shell grid gap-12 pb-16 pt-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pb-24 lg:pt-20">
-        <div>
-          <p className="inline-flex rounded-full border border-brand-600/20 bg-white/85 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-700 shadow-soft backdrop-blur">
-            {siteConfig.name}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_8%,rgba(164,22,36,0.10),transparent_28rem),linear-gradient(135deg,#fffaf7_0%,#ffffff_48%,#f7f4f1_100%)]" />
+      <div className="container-shell grid gap-9 pb-14 pt-10 lg:grid-cols-[0.98fr_1.02fr] lg:items-center lg:gap-12 lg:pb-20 lg:pt-16">
+        <div className="max-w-2xl">
+          <p className="inline-flex rounded-full border border-brand-600/20 bg-white/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-700 shadow-soft backdrop-blur">
+            {siteConfig.tagline}
           </p>
-          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-charcoal-900 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-charcoal-900 sm:text-5xl lg:text-6xl">
             {title}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
@@ -48,37 +44,24 @@ export function HeroSection({
               {secondaryCtaLabel}
             </Link>
           </div>
-          <div className="mt-7 flex flex-wrap gap-2 text-sm font-semibold text-charcoal-700">
-            {trustLine.map((item) => (
-              <span key={item} className="rounded-full border border-charcoal-900/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur">{item}</span>
-            ))}
+          <div className="mt-6 rounded-2xl border border-charcoal-900/10 bg-white/80 px-4 py-3 text-sm font-semibold leading-6 text-charcoal-700 shadow-sm backdrop-blur">
+            {trustLine}
+          </div>
+          <div className="mt-6 max-w-md">
+            <QuickLeadForm sourcePage="homepage-hero" compact />
           </div>
         </div>
 
-        <div className="grid gap-5">
-          <div className="relative rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
-            <div className="relative min-h-[300px] overflow-hidden rounded-[1.55rem] bg-charcoal-900 sm:min-h-[420px] lg:min-h-[520px]">
+        <div className="relative rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
+          <div className="relative min-h-[300px] overflow-hidden rounded-[1.55rem] bg-charcoal-900 sm:min-h-[430px] lg:min-h-[560px]">
             <Image
               src={image}
-              alt="Professional paperwork support desk"
+              alt="Indian family using phone for tax and business paperwork support"
               fill
               priority
               sizes="(min-width: 1024px) 46vw, 100vw"
-              className="object-cover"
+              className="object-cover object-[62%_center]"
             />
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:absolute lg:-bottom-6 lg:left-8 lg:right-8 lg:mt-0">
-              {heroCards.map(([label, value, note], index) => (
-                <div key={label} className={`rounded-2xl border p-4 shadow-premium ${index === 0 ? "border-brand-600/20 bg-white text-charcoal-900" : "border-white/15 bg-charcoal-900 text-white"}`}>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.18em] ${index === 0 ? "text-brand-600" : "text-white/55"}`}>{label}</p>
-                  <p className="mt-2 text-xl font-semibold">{value}</p>
-                  <p className={`mt-2 text-xs leading-5 ${index === 0 ? "text-muted" : "text-white/65"}`}>{note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="lg:pt-8">
-            <QuickLeadForm sourcePage="homepage-hero" compact />
           </div>
         </div>
       </div>

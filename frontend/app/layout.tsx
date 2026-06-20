@@ -46,7 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SEOJsonLd data={[getOrganizationSchema(), getProfessionalServiceSchema()]} />
         <Header />
-        <main>{children}</main>
+        <main className="pb-20 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomCTA />
       </body>

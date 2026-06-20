@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { siteConfig } from "@/data/site.config";
 import { services } from "@/data/services";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -24,7 +25,9 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-bold text-charcoal-900">VB</span>
+              <span className="relative flex h-11 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white">
+                <Image src={siteConfig.images.logo} alt="" fill sizes="48px" className="object-cover object-left" />
+              </span>
               <span>
                 <span className="block text-lg font-semibold tracking-tight">{siteConfig.name}</span>
                 <span className="text-xs font-medium text-white/60">{siteConfig.tagline}</span>

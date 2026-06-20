@@ -7,7 +7,6 @@ import { CTASection } from "@/components/CTASection";
 import { PricingCards } from "@/components/PricingCards";
 import { QuickLeadForm } from "@/components/QuickLeadForm";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
-import { SectionHeader } from "@/components/SectionHeader";
 import { ServicePageTemplate } from "@/components/ServicePageTemplate";
 import { TrustBadges } from "@/components/TrustBadges";
 import { getServiceBySlug, services } from "@/data/services";
@@ -113,7 +112,9 @@ async function PricingPage() {
       <SEOJsonLd data={getBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "Pricing", path: "/pricing" }])} />
       <Breadcrumbs items={[{ name: "Pricing", href: "/pricing" }]} />
       <section className="container-shell pb-16 pt-8">
-        <SectionHeader eyebrow="Pricing" title="Starting prices with clear confirmation." description="Final fee depends on documents, income sources and complexity. We will confirm before work starts." />
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Pricing</p>
+        <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Starting prices with clear confirmation.</h1>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">Final fee depends on documents, income sources and complexity. We will confirm before work starts.</p>
         <div className="mt-9"><PricingCards plans={pricingContent} /></div>
         <div className="mt-10 rounded-2xl bg-brand-50 p-5 text-sm leading-7 text-brand-900">
           We do not make false refund promises. Tax, refund or payable amount depends on official records and eligibility.
@@ -129,9 +130,16 @@ function ContactPage() {
     <>
       <SEOJsonLd data={getBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "Contact", path: "/contact" }])} />
       <Breadcrumbs items={[{ name: "Contact", href: "/contact" }]} />
-      <section className="container-shell grid gap-10 pb-16 pt-8 lg:grid-cols-[1fr_420px]">
-        <ContactSection />
-        <QuickLeadForm sourcePage="contact" />
+      <section className="container-shell pb-16 pt-8">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Contact</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Contact VB Consultants</h1>
+          <p className="mt-5 text-lg leading-8 text-charcoal-700">Enter your phone number or send a WhatsApp message. We will guide you with simple next steps.</p>
+        </div>
+        <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
+          <ContactSection />
+          <QuickLeadForm sourcePage="contact" />
+        </div>
       </section>
     </>
   );
@@ -149,7 +157,7 @@ function AboutPage() {
           <p className="mt-5 text-lg leading-8 text-muted">The platform helps Indian salaried people, families, freelancers and small businesses upload documents, pay securely and track paperwork requests from a phone.</p>
           <div className="mt-8"><TrustBadges /></div>
         </div>
-        <Image src={siteConfig.images.contact} alt="VB Consultants office placeholder" width={900} height={700} className="rounded-3xl object-cover shadow-premium" />
+        <Image src={siteConfig.images.gstConsultation} alt="VB Consultants business support consultation" width={900} height={700} className="rounded-3xl object-cover shadow-premium" />
       </section>
       <CTASection className="pb-16" />
     </>

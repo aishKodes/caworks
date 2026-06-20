@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/data/site.config";
@@ -9,11 +10,11 @@ import { cn } from "@/lib/utils";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const links = [
-  { href: "/salary-itr-filing", label: "Salary ITR" },
+  { href: "/", label: "Home" },
+  { href: "/salary-itr-filing", label: "ITR Filing" },
   { href: "/gst-services", label: "GST" },
-  { href: "/loan-project-report", label: "Loans" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/track-status", label: "Track" }
+  { href: "/contact", label: "Contact" }
 ];
 
 const menuServices = services.slice(0, 12);
@@ -26,14 +27,28 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-charcoal-900/10 bg-paper/90 backdrop-blur-xl">
       <div className="container-shell flex min-h-[72px] items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label={`${siteConfig.name} home`}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-charcoal-900 text-sm font-bold text-white shadow-soft ring-1 ring-white/50">VB</span>
+          <span className="relative flex h-11 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-charcoal-900/10">
+            <Image src={siteConfig.images.logo} alt="" fill priority sizes="48px" className="object-cover object-left" />
+          </span>
           <span>
             <span className="block text-lg font-semibold tracking-tight text-charcoal-900">{siteConfig.name}</span>
-            <span className="hidden text-xs font-medium text-muted sm:block">Tax, GST and paperwork help</span>
+            <span className="hidden text-xs font-medium text-muted sm:block">{siteConfig.tagline}</span>
           </span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+          {links.slice(0, 3).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-semibold transition hover:bg-white hover:shadow-soft",
+                pathname === link.href ? "text-brand-700" : "text-charcoal-900"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
           <div className="group relative">
             <button type="button" className="rounded-full px-4 py-2 text-sm font-semibold text-charcoal-900 transition hover:bg-white hover:shadow-soft">
               Services
@@ -49,7 +64,7 @@ export function Header() {
               </div>
             </div>
           </div>
-          {links.map((link) => (
+          {links.slice(3).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -64,6 +79,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
+          <WhatsAppButton className="px-4 py-2.5" />
           <Link href="/login" className="rounded-full border border-charcoal-900/10 px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition hover:border-brand-600 hover:text-brand-700">
             Login
           </Link>
@@ -87,7 +103,7 @@ export function Header() {
         <div className="border-t border-charcoal-900/10 bg-white lg:hidden">
           <div className="container-shell py-4">
             <div className="grid gap-2">
-              {[...links, { href: "/upload-documents", label: "Upload Docs" }, { href: "/login", label: "Login" }, { href: "/signup", label: "Signup" }].map((link) => (
+              {[...links, { href: "/upload-documents", label: "Upload Docs" }, { href: "/track-status", label: "Track Status" }, { href: "/login", label: "Login" }, { href: "/signup", label: "Signup" }].map((link) => (
                 <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">
                   {link.label}
                 </Link>

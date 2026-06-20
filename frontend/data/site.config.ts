@@ -8,10 +8,10 @@ export const siteConfig = {
   name: brandName,
   registeredBusinessName,
   legalName: registeredBusinessName,
-  tagline: "Tax, GST, loans and business paperwork made simple.",
+  tagline: "Tax, Compliance & Business Support",
   defaultTitle: "VB Consultants | Online Tax, GST and Business Paperwork Help",
   description:
-    "File ITR, get GST help, upload documents, pay securely and track tax, loan and business paperwork requests from your phone.",
+    "VB Consultants offers simple online ITR filing, GST, tax notice, loan project report and business compliance support for Indian individuals and small businesses.",
   siteUrl,
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.vbcbharat.com",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919000000000",

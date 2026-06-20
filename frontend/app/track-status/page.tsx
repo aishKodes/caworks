@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { StatusTimeline } from "@/components/StatusTimeline";
+import { siteConfig } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -15,10 +17,13 @@ export default function TrackStatusPage() {
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Track</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Track your request status.</h1>
-        <p className="mt-5 text-lg leading-8 text-muted">Login with phone, email or Tax Help ID to see your requests.</p>
+        <p className="mt-5 text-lg leading-8 text-charcoal-700">Login with phone, email or Tax Help ID to see documents, payment and work status.</p>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <Link href="/login" className="rounded-full bg-brand-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-red">Login to track</Link>
           <Link href="/quick-contact" className="rounded-full border border-charcoal-900/10 px-6 py-3 text-center text-sm font-semibold text-charcoal-900">Enter phone number</Link>
+        </div>
+        <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
+          <Image src={siteConfig.images.paymentTracking} alt="Payment and request status tracking" width={900} height={650} priority className="h-[300px] w-full object-cover" />
         </div>
       </div>
       <div className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
