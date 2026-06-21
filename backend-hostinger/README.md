@@ -26,6 +26,21 @@ In Hostinger hPanel:
 2. Create a database user.
 3. Import `install.sql` using phpMyAdmin.
 
+Fresh reset process for VB Consultants:
+
+1. Create a new MySQL database and user.
+2. Import `backend-hostinger/install.sql`.
+3. Upload `backend-hostinger` to the API subdomain folder.
+4. Copy `config.example.php` to `config.php`.
+5. Set DB credentials, `APP_URL`/`app_url`, `FRONTEND_URL`/`frontend_url`, `ALLOWED_ORIGIN`/`allowed_origin`, `INSTALLER_SECRET`, SMTP, WhatsApp and Razorpay values.
+6. Open `https://api.vbcbharat.com/admin/setup.php`.
+7. Create the first `super_admin`.
+8. Login at `https://api.vbcbharat.com/admin/login.php`.
+9. Open `https://api.vbcbharat.com/admin/system-check.php`.
+10. Test `https://api.vbcbharat.com/api/health`, `/api/content/pricing`, signup, `/api/me`, document upload and email test.
+
+Fresh DB reset removes old users, leads, uploaded document records, admin content and payment records unless you export them first.
+
 For an existing database, first take a backup, then import:
 
 ```text
@@ -179,6 +194,10 @@ In Vercel, set:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://api.vbcbharat.com
+NEXT_PUBLIC_SITE_URL=https://www.vbcbharat.com
+NEXT_PUBLIC_BRAND_NAME=VB Consultants
+NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
+REVALIDATE_SECRET=your_revalidate_secret
 ```
 
 In backend `config.php`, set:
@@ -210,6 +229,22 @@ Admin can:
 - Edit FAQs and testimonials
 - View audit logs
 - Prepare Razorpay, UPI, SMTP, analytics, WhatsApp Business API, AI chatbot and email follow-up settings
+
+After a fresh install, use `admin/system-check.php` to confirm:
+
+- database connection
+- required tables, including `user_sessions`
+- cookie name/domain for persistent login
+- CORS credentials origin
+- private upload directory writability
+- media directory writability
+- SMTP settings and recent email errors
+
+CLI schema check is also available when SSH works:
+
+```bash
+php scripts/check_schema.php
+```
 
 Manual payment screenshots appear with status `Payment verification pending`. Admins with payment permission can verify or reject them from `admin/payments.php` or the request detail screen.
 

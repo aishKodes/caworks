@@ -56,11 +56,105 @@ function bearer_token(): ?string {
     if (stripos($header, 'Bearer ') === 0) {
         return trim(substr($header, 7));
     }
-    return $_COOKIE['tax_help_token'] ?? null;
+    return $_COOKIE[auth_cookie_name()] ?? ($_COOKIE['tax_help_token'] ?? null);
+}
+
+function auth_cookie_name(): string {
+    $config = app_config();
+    return (string) ($config['SESSION_COOKIE_NAME'] ?? $config['session_cookie_name'] ?? 'vbc_session');
+}
+
+function auth_cookie_domain(): string {
+    $config = app_config();
+    return (string) ($config['SESSION_COOKIE_DOMAIN'] ?? $config['session_cookie_domain'] ?? '');
+}
+
+function auth_session_days(): int {
+    $config = app_config();
+    return max(1, (int) ($config['SESSION_DAYS'] ?? $config['session_days'] ?? 30));
+}
+
+function current_request_token_hash(?string $token = null): ?string {
+    $token = $token ?? bearer_token();
+    return $token ? hash('sha256', $token) : null;
+}
+
+function table_exists_auth(string $table): bool {
+    static $cache = [];
+    if (array_key_exists($table, $cache)) {
+        return $cache[$table];
+    }
+    try {
+        $stmt = db()->prepare('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1');
+        $stmt->execute([$table]);
+        $cache[$table] = (bool) $stmt->fetch();
+    } catch (Throwable $ignored) {
+        $cache[$table] = false;
+    }
+    return $cache[$table];
+}
+
+function create_user_session(array $user): string {
+    $rawToken = base64url_encode_text(random_bytes(32));
+    if (table_exists_auth('user_sessions')) {
+        $expires = (new DateTimeImmutable('+' . auth_session_days() . ' days'))->format('Y-m-d H:i:s');
+        $stmt = db()->prepare('INSERT INTO user_sessions (user_id, token_hash, expires_at, last_used_at, user_agent, ip_hash) VALUES (?, ?, ?, NOW(), ?, ?)');
+        $stmt->execute([
+            (int) $user['id'],
+            hash('sha256', $rawToken),
+            $expires,
+            substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? '')),
+        ]);
+    }
+    set_auth_cookie(auth_cookie_name(), $rawToken, 60 * 60 * 24 * auth_session_days());
+    return $rawToken;
+}
+
+function user_from_session_token(?string $token): ?array {
+    if (!$token || !table_exists_auth('user_sessions')) {
+        return null;
+    }
+    try {
+        $stmt = db()->prepare('
+            SELECT u.id, u.tax_help_id, u.full_name, u.phone, u.email
+            FROM user_sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.token_hash = ?
+              AND s.revoked_at IS NULL
+              AND s.expires_at > NOW()
+              AND COALESCE(u.active, 1) = 1
+            LIMIT 1
+        ');
+        $stmt->execute([hash('sha256', $token)]);
+        $user = $stmt->fetch();
+        if ($user) {
+            db()->prepare('UPDATE user_sessions SET last_used_at = NOW() WHERE token_hash = ?')->execute([hash('sha256', $token)]);
+            return $user;
+        }
+    } catch (Throwable $ignored) {
+    }
+    return null;
+}
+
+function revoke_current_user_session(): void {
+    $hash = current_request_token_hash();
+    if ($hash && table_exists_auth('user_sessions')) {
+        try {
+            db()->prepare('UPDATE user_sessions SET revoked_at = NOW() WHERE token_hash = ?')->execute([$hash]);
+        } catch (Throwable $ignored) {
+        }
+    }
 }
 
 function require_user(): array {
-    $payload = verify_token(bearer_token(), 'user');
+    $token = bearer_token();
+    $sessionUser = user_from_session_token($token);
+    if ($sessionUser) {
+        return $sessionUser;
+    }
+
+    $payload = verify_token($token, 'user');
     if (!$payload) {
         fail('Please login first.', 401);
     }
@@ -138,11 +232,35 @@ function require_admin_permission(string $permission): array {
 }
 
 function set_auth_cookie(string $name, string $value, int $ttl): void {
-    setcookie($name, $value, [
+    $config = app_config();
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $params = [
         'expires' => time() + $ttl,
         'path' => '/',
-        'secure' => true,
+        'secure' => $secure,
         'httponly' => true,
-        'samesite' => 'None',
-    ]);
+        'samesite' => 'Lax',
+    ];
+    $domain = $name === auth_cookie_name() ? auth_cookie_domain() : (string) ($config['admin_cookie_domain'] ?? '');
+    if ($domain !== '') {
+        $params['domain'] = $domain;
+    }
+    setcookie($name, $value, $params);
+}
+
+function clear_auth_cookie(string $name): void {
+    $config = app_config();
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $params = [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ];
+    $domain = $name === auth_cookie_name() ? auth_cookie_domain() : (string) ($config['admin_cookie_domain'] ?? '');
+    if ($domain !== '') {
+        $params['domain'] = $domain;
+    }
+    setcookie($name, '', $params);
 }

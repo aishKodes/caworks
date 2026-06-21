@@ -38,13 +38,29 @@ if ($path === '/') {
 try {
     route($method, $path);
 } catch (Throwable $e) {
-    if (($config['app_env'] ?? 'production') !== 'production') {
-        fail($e->getMessage(), 500);
+    $requestId = 'ERR-' . bin2hex(random_bytes(5));
+    try {
+        if (db_column_exists('api_errors', 'request_id')) {
+            db()->prepare('INSERT INTO api_errors (request_id, method, path, message, trace, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([
+                $requestId,
+                $method,
+                $path,
+                $e->getMessage(),
+                $e->getTraceAsString(),
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            ]);
+        }
+    } catch (Throwable $ignored) {
     }
-    fail('Something went wrong. Please try again or use WhatsApp.', 500);
+    if (($config['app_env'] ?? 'production') !== 'production') {
+        json_response(['ok' => false, 'message' => $e->getMessage(), 'request_id' => $requestId], 500);
+    }
+    json_response(['ok' => false, 'message' => 'Something went wrong. Please try again or use WhatsApp.', 'request_id' => $requestId], 500);
 }
 
 function route(string $method, string $path): void {
+    if ($method === 'GET' && $path === '/health') ok(['status' => 'online', 'time' => date('c')]);
     if ($method === 'POST' && $path === '/quick-lead') handle_quick_lead();
     if ($method === 'POST' && $path === '/contact') handle_contact();
     if ($method === 'POST' && $path === '/signup') handle_signup();
@@ -182,19 +198,42 @@ function handle_contact(): void {
 function handle_signup(): void {
     rate_limit('signup_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 5, 600);
     $data = read_json();
+    if (clean_string($data['honeypot'] ?? '') !== '') ok([], 'Thank you.');
+    $fullName = clean_string($data['fullName'] ?? $data['name'] ?? '', 160);
+    $data['fullName'] = $fullName;
     require_fields($data, ['fullName', 'phone', 'email', 'password']);
     $phone = clean_string($data['phone'], 30);
     $email = strtolower(clean_string($data['email'], 180));
-    if (!valid_phone($phone) || !valid_email($email) || strlen((string) $data['password']) < 8) {
+    $password = (string) $data['password'];
+    $confirm = (string) ($data['confirm_password'] ?? $data['confirmPassword'] ?? $password);
+    if (!valid_phone($phone) || !valid_email($email) || strlen($password) < 8 || $password !== $confirm) {
         fail('Please check phone, email and password.', 422);
     }
-    $taxId = generate_code('TAX');
-    $stmt = db()->prepare('INSERT INTO users (tax_help_id, full_name, phone, email, password_hash) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([$taxId, clean_string($data['fullName'], 160), $phone, $email, password_hash((string) $data['password'], PASSWORD_DEFAULT)]);
+
+    $existing = db()->prepare('SELECT id FROM users WHERE phone = ? OR email = ? LIMIT 1');
+    $existing->execute([$phone, $email]);
+    if ($existing->fetch()) {
+        fail('An account already exists with this phone/email. Please login to continue.', 409);
+    }
+
+    do {
+        $taxId = generate_code('TAX');
+        $check = db()->prepare('SELECT id FROM users WHERE tax_help_id = ? LIMIT 1');
+        $check->execute([$taxId]);
+    } while ($check->fetch());
+
+    try {
+        $stmt = db()->prepare('INSERT INTO users (tax_help_id, full_name, phone, email, password_hash) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$taxId, $fullName, $phone, $email, password_hash($password, PASSWORD_DEFAULT)]);
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') {
+            fail('An account already exists with this phone/email. Please login to continue.', 409);
+        }
+        throw $e;
+    }
     $userId = (int) db()->lastInsertId();
-    $user = ['id' => $userId, 'tax_help_id' => $taxId, 'full_name' => clean_string($data['fullName'], 160), 'phone' => $phone, 'email' => $email];
-    $token = create_auth_token($user);
-    set_auth_cookie('tax_help_token', $token, 60 * 60 * 24 * 30);
+    $user = ['id' => $userId, 'tax_help_id' => $taxId, 'full_name' => $fullName, 'name' => $fullName, 'phone' => $phone, 'email' => $email];
+    $token = create_user_session($user);
     queueWhatsAppMessage($userId, null, $phone, 'signup', whatsapp_template('signup', ['name' => $user['full_name'], 'tax_id' => $taxId]));
     email_admin_template(
         'signup_admin',
@@ -225,19 +264,22 @@ function handle_login(): void {
     if (!$user || !password_verify((string) $data['password'], $user['password_hash'])) {
         fail('Invalid login details.', 401);
     }
-    $summary = ['id' => (int) $user['id'], 'tax_help_id' => $user['tax_help_id'], 'full_name' => $user['full_name'], 'phone' => $user['phone'], 'email' => $user['email']];
-    $token = create_auth_token($summary);
-    set_auth_cookie('tax_help_token', $token, 60 * 60 * 24 * 30);
+    $summary = ['id' => (int) $user['id'], 'tax_help_id' => $user['tax_help_id'], 'full_name' => $user['full_name'], 'name' => $user['full_name'], 'phone' => $user['phone'], 'email' => $user['email']];
+    $token = create_user_session($summary);
     ok(['token' => $token, 'user' => $summary], 'Login complete.');
 }
 
 function handle_logout(): void {
-    setcookie('tax_help_token', '', time() - 3600, '/');
+    revoke_current_user_session();
+    clear_auth_cookie(auth_cookie_name());
+    clear_auth_cookie('tax_help_token');
     ok([], 'Logged out.');
 }
 
 function handle_me(): void {
-    ok(require_user());
+    $user = require_user();
+    $user['name'] = $user['full_name'] ?? '';
+    ok($user);
 }
 
 function handle_service_request(): void {
@@ -307,6 +349,25 @@ function handle_upload_documents(): void {
     $files = normalize_files_array($_FILES['files'] ?? []);
     $serviceSlug = clean_string($_POST['service_slug'] ?? '', 160);
     $uploadMessage = clean_string($_POST['message'] ?? '', 2000);
+    $serviceLabel = clean_string($_POST['service_label'] ?? $serviceSlug, 160);
+    if ($requestId <= 0 && $serviceSlug !== '') {
+        $code = generate_code('REQ');
+        $stmt = db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, city, details) VALUES (?, ?, ?, ?, ?, ?)');
+        $stmt->execute([
+            $code,
+            $user['id'],
+            $serviceSlug,
+            $files ? 'Documents pending' : 'Draft',
+            '',
+            $uploadMessage ?: 'Document upload started.',
+        ]);
+        $requestId = (int) db()->lastInsertId();
+        db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([
+            $requestId,
+            'Draft',
+            'Request created from document upload.',
+        ]);
+    }
     if (!$files) {
         if ($serviceSlug === 'not-sure' && $uploadMessage !== '') {
             if ($requestId > 0) {
@@ -320,13 +381,12 @@ function handle_upload_documents(): void {
                 (int) $user['id'],
                 $requestId ?: null
             );
-            ok(['files' => [], 'errors' => []], 'Thank you. Your message has been received. Our team will contact you.');
+            ok(['files' => [], 'errors' => [], 'request' => ['id' => $requestId]], 'Thank you. Your message has been received. Our team will contact you.');
         }
         fail('Please select files.', 422);
     }
     $documentTypes = array_values(is_array($_POST['document_types'] ?? null) ? $_POST['document_types'] : [$_POST['document_type'] ?? 'document']);
     $documentLabels = array_values(is_array($_POST['document_labels'] ?? null) ? $_POST['document_labels'] : [$_POST['document_label'] ?? $_POST['document_type'] ?? 'Document']);
-    $serviceLabel = clean_string($_POST['service_label'] ?? '', 160);
     $saved = [];
     $errors = [];
     $hasDocumentLabel = db_column_exists('documents', 'document_label');
@@ -385,7 +445,7 @@ function handle_upload_documents(): void {
         ['related_user_id' => (int) $user['id'], 'related_request_id' => $requestId ?: null]
     );
     $message = $errors ? 'Some files uploaded. Please check failed files and try again.' : 'Documents uploaded.';
-    ok(['files' => $saved, 'errors' => $errors], $message);
+    ok(['files' => $saved, 'errors' => $errors, 'request' => ['id' => $requestId]], $message);
 }
 
 function handle_create_razorpay_order(): void {

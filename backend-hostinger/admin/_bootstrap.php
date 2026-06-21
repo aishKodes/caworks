@@ -226,7 +226,9 @@ function admin_header(string $title): void {
         ['integrations.php', 'Integrations', 'manage_integrations'],
         ['email-settings.php', 'Email Settings', 'manage_integrations'],
         ['test-email.php', 'Test Email', 'manage_integrations'],
+        ['email-logs.php', 'Email Logs', 'manage_integrations'],
         ['email_templates.php', 'Email Templates', 'manage_integrations'],
+        ['system-check.php', 'System Check', 'view_dashboard'],
         ['audit_logs.php', 'Audit Logs', 'view_audit_logs'],
     ];
     echo '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';

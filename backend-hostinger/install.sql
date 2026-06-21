@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tax_help_id VARCHAR(20) NOT NULL UNIQUE,
   full_name VARCHAR(160) NOT NULL,
@@ -11,7 +11,42 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE quick_leads (
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  last_used_at DATETIME NULL,
+  user_agent VARCHAR(255) NULL,
+  ip_hash CHAR(64) NULL,
+  revoked_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_sessions_user (user_id, expires_at, revoked_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  purpose VARCHAR(80) DEFAULT 'session',
+  expires_at DATETIME NOT NULL,
+  revoked_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS quick_leads (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NULL,
   phone VARCHAR(30) NOT NULL,
@@ -26,7 +61,7 @@ CREATE TABLE quick_leads (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE service_requests (
+CREATE TABLE IF NOT EXISTS service_requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
   request_code VARCHAR(24) NOT NULL UNIQUE,
   user_id INT NOT NULL,
@@ -41,7 +76,7 @@ CREATE TABLE service_requests (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE documents (
+CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   request_id INT NULL,
@@ -60,7 +95,26 @@ CREATE TABLE documents (
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS uploaded_documents (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  request_id INT NULL,
+  document_type VARCHAR(120) NULL,
+  document_label VARCHAR(180) NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  size INT NOT NULL,
+  path VARCHAR(500) NOT NULL,
+  status VARCHAR(80) DEFAULT 'Received',
+  admin_note TEXT NULL,
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS payments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   request_id INT NOT NULL,
@@ -76,7 +130,16 @@ CREATE TABLE payments (
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE manual_payment_screenshots (
+CREATE TABLE IF NOT EXISTS payment_status_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  payment_id INT NOT NULL,
+  status VARCHAR(80) NOT NULL,
+  note TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS manual_payment_screenshots (
   id INT AUTO_INCREMENT PRIMARY KEY,
   payment_id INT NOT NULL,
   original_name VARCHAR(255) NOT NULL,
@@ -89,7 +152,7 @@ CREATE TABLE manual_payment_screenshots (
   FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE status_updates (
+CREATE TABLE IF NOT EXISTS status_updates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   request_id INT NOT NULL,
   status VARCHAR(80) NOT NULL,
@@ -99,7 +162,17 @@ CREATE TABLE status_updates (
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE admin_users (
+CREATE TABLE IF NOT EXISTS request_status_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id INT NOT NULL,
+  status VARCHAR(80) NOT NULL,
+  note TEXT NULL,
+  visible_to_user TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(180) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
@@ -114,20 +187,27 @@ CREATE TABLE admin_users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE admin_permissions (
+CREATE TABLE IF NOT EXISTS admin_roles (
+  role_key VARCHAR(60) PRIMARY KEY,
+  label VARCHAR(120) NOT NULL,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_permissions (
   permission_key VARCHAR(120) PRIMARY KEY,
   label VARCHAR(180) NOT NULL,
   description TEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE admin_role_permissions (
+CREATE TABLE IF NOT EXISTS admin_role_permissions (
   role_key VARCHAR(60) NOT NULL,
   permission_key VARCHAR(120) NOT NULL,
   PRIMARY KEY (role_key, permission_key),
   FOREIGN KEY (permission_key) REFERENCES admin_permissions(permission_key) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE admin_user_permissions (
+CREATE TABLE IF NOT EXISTS admin_user_permissions (
   admin_id INT NOT NULL,
   permission_key VARCHAR(120) NOT NULL,
   PRIMARY KEY (admin_id, permission_key),
@@ -135,7 +215,7 @@ CREATE TABLE admin_user_permissions (
   FOREIGN KEY (permission_key) REFERENCES admin_permissions(permission_key) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE admin_notes (
+CREATE TABLE IF NOT EXISTS admin_notes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   request_id INT NOT NULL,
   admin_id INT NULL,
@@ -145,7 +225,18 @@ CREATE TABLE admin_notes (
   FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE whatsapp_messages (
+CREATE TABLE IF NOT EXISTS request_notes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id INT NOT NULL,
+  admin_id INT NULL,
+  note TEXT NOT NULL,
+  visible_to_user TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+  FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NULL,
   request_id INT NULL,
@@ -159,7 +250,7 @@ CREATE TABLE whatsapp_messages (
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE email_logs (
+CREATE TABLE IF NOT EXISTS email_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   event_type VARCHAR(120) DEFAULT 'general',
   recipient VARCHAR(180) NOT NULL,
@@ -172,7 +263,7 @@ CREATE TABLE email_logs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   admin_id INT NULL,
   user_id INT NULL,
@@ -184,13 +275,27 @@ CREATE TABLE audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS api_errors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id VARCHAR(40) NOT NULL,
+  method VARCHAR(12) NULL,
+  path VARCHAR(255) NULL,
+  message TEXT NULL,
+  trace MEDIUMTEXT NULL,
+  ip_address VARCHAR(64) NULL,
+  user_agent VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_api_errors_request (request_id),
+  INDEX idx_api_errors_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE INDEX idx_quick_leads_phone ON quick_leads(phone);
 CREATE INDEX idx_requests_user_status ON service_requests(user_id, status);
 CREATE INDEX idx_requests_code ON service_requests(request_code);
 CREATE INDEX idx_documents_request ON documents(request_id);
 CREATE INDEX idx_payments_request ON payments(request_id);
 
-CREATE TABLE site_settings (
+CREATE TABLE IF NOT EXISTS site_settings (
   setting_key VARCHAR(120) PRIMARY KEY,
   setting_value MEDIUMTEXT NULL,
   setting_type VARCHAR(40) DEFAULT 'text',
@@ -198,7 +303,7 @@ CREATE TABLE site_settings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE homepage_sections (
+CREATE TABLE IF NOT EXISTS homepage_sections (
   id INT AUTO_INCREMENT PRIMARY KEY,
   section_key VARCHAR(120) NOT NULL UNIQUE,
   title VARCHAR(255) NULL,
@@ -214,7 +319,7 @@ CREATE TABLE homepage_sections (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE service_page_content (
+CREATE TABLE IF NOT EXISTS service_page_content (
   id INT AUTO_INCREMENT PRIMARY KEY,
   slug VARCHAR(160) NOT NULL UNIQUE,
   title VARCHAR(255) NOT NULL,
@@ -236,7 +341,54 @@ CREATE TABLE service_page_content (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE service_document_requirements (
+CREATE TABLE IF NOT EXISTS services (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(160) NOT NULL UNIQUE,
+  service_name VARCHAR(255) NOT NULL,
+  category VARCHAR(120) NULL,
+  short_description TEXT NULL,
+  hero_title VARCHAR(255) NULL,
+  hero_subtitle TEXT NULL,
+  hero_image VARCHAR(500) NULL,
+  pricing_text TEXT NULL,
+  seo_title VARCHAR(255) NULL,
+  seo_description TEXT NULL,
+  active TINYINT(1) DEFAULT 1,
+  sort_order INT DEFAULT 0,
+  show_in_menu TINYINT(1) DEFAULT 1,
+  show_on_homepage TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS service_sections (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  service_id INT NULL,
+  service_slug VARCHAR(160) NOT NULL,
+  section_key VARCHAR(120) NOT NULL,
+  title VARCHAR(255) NULL,
+  content MEDIUMTEXT NULL,
+  sort_order INT DEFAULT 0,
+  active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS service_faqs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  service_id INT NULL,
+  service_slug VARCHAR(160) NOT NULL,
+  question VARCHAR(255) NOT NULL,
+  answer TEXT NOT NULL,
+  sort_order INT DEFAULT 0,
+  active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS service_document_requirements (
   id INT AUTO_INCREMENT PRIMARY KEY,
   service_slug VARCHAR(160) NOT NULL,
   document_key VARCHAR(120) NOT NULL,
@@ -252,7 +404,7 @@ CREATE TABLE service_document_requirements (
   INDEX idx_service_document_requirements_service (service_slug, active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE pricing_items (
+CREATE TABLE IF NOT EXISTS pricing_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   service_name VARCHAR(180) NOT NULL,
   amount_text VARCHAR(80) NOT NULL,
@@ -268,7 +420,7 @@ CREATE TABLE pricing_items (
   UNIQUE KEY uniq_pricing_service (service_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE media_library (
+CREATE TABLE IF NOT EXISTS media_library (
   id INT AUTO_INCREMENT PRIMARY KEY,
   original_name VARCHAR(255) NOT NULL,
   stored_name VARCHAR(255) NOT NULL,
@@ -283,7 +435,7 @@ CREATE TABLE media_library (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE blog_posts_cms (
+CREATE TABLE IF NOT EXISTS blog_posts_cms (
   id INT AUTO_INCREMENT PRIMARY KEY,
   slug VARCHAR(180) NOT NULL UNIQUE,
   title VARCHAR(255) NOT NULL,
@@ -301,20 +453,37 @@ CREATE TABLE blog_posts_cms (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE blog_categories (
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  category VARCHAR(120) NULL,
+  excerpt TEXT NULL,
+  featured_image VARCHAR(500) NULL,
+  content MEDIUMTEXT NULL,
+  seo_title VARCHAR(255) NULL,
+  seo_description TEXT NULL,
+  status VARCHAR(40) DEFAULT 'draft',
+  author_name VARCHAR(160) DEFAULT 'VB Consultants',
+  published_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS blog_categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL UNIQUE,
   slug VARCHAR(160) NOT NULL UNIQUE,
   active TINYINT(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE blog_tags (
+CREATE TABLE IF NOT EXISTS blog_tags (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL UNIQUE,
   slug VARCHAR(160) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE blog_post_tags (
+CREATE TABLE IF NOT EXISTS blog_post_tags (
   post_id INT NOT NULL,
   tag_id INT NOT NULL,
   PRIMARY KEY (post_id, tag_id),
@@ -322,7 +491,7 @@ CREATE TABLE blog_post_tags (
   FOREIGN KEY (tag_id) REFERENCES blog_tags(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE faqs (
+CREATE TABLE IF NOT EXISTS faqs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   page_key VARCHAR(120) DEFAULT 'global',
   service_slug VARCHAR(160) NULL,
@@ -334,7 +503,7 @@ CREATE TABLE faqs (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE testimonials (
+CREATE TABLE IF NOT EXISTS testimonials (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
   context VARCHAR(180) NULL,
@@ -347,7 +516,7 @@ CREATE TABLE testimonials (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE local_seo_pages (
+CREATE TABLE IF NOT EXISTS local_seo_pages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   city VARCHAR(120) NOT NULL,
   state VARCHAR(120) DEFAULT 'Odisha',
@@ -364,7 +533,25 @@ CREATE TABLE local_seo_pages (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE integration_settings (
+CREATE TABLE IF NOT EXISTS local_pages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  city VARCHAR(120) NOT NULL,
+  state VARCHAR(120) DEFAULT 'Odisha',
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  page_title VARCHAR(255) NOT NULL,
+  hero_title VARCHAR(255) NULL,
+  body_content MEDIUMTEXT NULL,
+  related_services_json MEDIUMTEXT NULL,
+  faqs_json MEDIUMTEXT NULL,
+  meta_title VARCHAR(255) NULL,
+  meta_description TEXT NULL,
+  image_path VARCHAR(500) NULL,
+  active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS integration_settings (
   setting_key VARCHAR(140) PRIMARY KEY,
   setting_value MEDIUMTEXT NULL,
   setting_group VARCHAR(80) DEFAULT 'general',
@@ -372,7 +559,24 @@ CREATE TABLE integration_settings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE email_templates (
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(140) PRIMARY KEY,
+  setting_value MEDIUMTEXT NULL,
+  setting_group VARCHAR(80) DEFAULT 'app',
+  is_secret TINYINT(1) DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS revalidation_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  paths_json MEDIUMTEXT NULL,
+  status VARCHAR(40) DEFAULT 'queued',
+  response_text TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS email_templates (
   template_key VARCHAR(120) PRIMARY KEY,
   subject VARCHAR(255) NOT NULL,
   body MEDIUMTEXT NOT NULL,
@@ -380,7 +584,7 @@ CREATE TABLE email_templates (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE scheduled_reminders (
+CREATE TABLE IF NOT EXISTS scheduled_reminders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NULL,
   request_id INT NULL,
@@ -393,7 +597,7 @@ CREATE TABLE scheduled_reminders (
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE followup_logs (
+CREATE TABLE IF NOT EXISTS followup_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   reminder_id INT NULL,
   user_id INT NULL,
@@ -409,6 +613,15 @@ CREATE TABLE followup_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO admin_roles (role_key, label, description) VALUES
+('super_admin', 'Super Admin', 'Full control over admin, content, payments and settings'),
+('admin', 'Admin', 'Manage most operational and content sections'),
+('staff', 'Staff', 'Manage leads, requests, notes, status and documents'),
+('content_editor', 'Content Editor', 'Manage website copy, media, services, blog and SEO'),
+('accountant', 'Accountant', 'Manage requests, documents and payments'),
+('viewer', 'Viewer', 'Read-only access to dashboard data')
+ON DUPLICATE KEY UPDATE label=VALUES(label), description=VALUES(description);
 
 INSERT INTO admin_permissions (permission_key, label, description) VALUES
 ('view_dashboard', 'View dashboard', 'Open the admin dashboard'),
@@ -516,6 +729,11 @@ INSERT INTO service_page_content (slug, title, category, short_description, subt
 ('general-tax-support','General Tax Support','Individuals','Not sure what you need? Start with your phone number.','Choose Not sure and we will guide you with simple next steps.','/images/vbc/mobile-document-upload-india.png','{"who":["Anyone unsure about tax paperwork","Families","Small business owners"],"documents":["Relevant records if available"],"process":["Enter phone","Explain need","Checklist shared","Next steps tracked"]}','Fee confirmed before work starts.','[]','General Tax Support | VB Consultants','General tax support and paperwork guidance for Indian individuals and small businesses.',1,23,1,0)
 ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), short_description=VALUES(short_description), subtitle=VALUES(subtitle), hero_image=VALUES(hero_image), sections_json=VALUES(sections_json), pricing_text=VALUES(pricing_text), faqs_json=VALUES(faqs_json), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), is_active=VALUES(is_active), sort_order=VALUES(sort_order), show_in_menu=VALUES(show_in_menu), show_on_homepage=VALUES(show_on_homepage);
 
+INSERT INTO services (slug, service_name, category, short_description, hero_title, hero_subtitle, hero_image, pricing_text, seo_title, seo_description, active, sort_order, show_in_menu, show_on_homepage)
+SELECT slug, title, category, short_description, title, subtitle, hero_image, pricing_text, seo_title, seo_description, is_active, sort_order, show_in_menu, show_on_homepage
+FROM service_page_content
+ON DUPLICATE KEY UPDATE service_name=VALUES(service_name), category=VALUES(category), short_description=VALUES(short_description), hero_title=VALUES(hero_title), hero_subtitle=VALUES(hero_subtitle), hero_image=VALUES(hero_image), pricing_text=VALUES(pricing_text), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), active=VALUES(active), sort_order=VALUES(sort_order), show_in_menu=VALUES(show_in_menu), show_on_homepage=VALUES(show_on_homepage);
+
 INSERT INTO service_document_requirements (service_slug, document_key, title, description, required, allow_multiple, sort_order, active) VALUES
 ('salary-itr-filing','form_16','Form 16','Upload Form 16 from your employer.',1,0,1,1),
 ('salary-itr-filing','pan','PAN','PAN card copy or clear PAN details.',0,0,2,1),
@@ -617,6 +835,32 @@ INSERT INTO testimonials (name, context, quote, avatar_image, rating, sort_order
 ('Family user', 'Notice help', 'The team explained the notice in simple words and asked only for relevant records.', '', 5, 3, 1)
 ON DUPLICATE KEY UPDATE quote=VALUES(quote), active=VALUES(active);
 
+INSERT INTO blog_categories (name, slug, active) VALUES
+('Tax Guides', 'tax-guides', 1),
+('GST Guides', 'gst-guides', 1),
+('Business Paperwork', 'business-paperwork', 1)
+ON DUPLICATE KEY UPDATE name=VALUES(name), active=VALUES(active);
+
+INSERT INTO blog_posts_cms (slug, title, category, summary, featured_image, content, seo_title, seo_description, tags, author_name, published, published_at) VALUES
+('documents-required-for-salary-itr-filing', 'Documents required for Salary ITR filing', 'Tax Guides', 'A simple checklist for salaried people using Form 16.', '/images/vbc/salary-itr-form-16-family.png', '<p>Keep Form 16, PAN, Aadhaar, AIS or Form 26AS, bank details and deduction proofs if available.</p>', 'Documents Required for Salary ITR Filing | VB Consultants', 'Simple document checklist for salary ITR filing in India.', 'itr,form 16,salary', 'VB Consultants', 0, NULL),
+('gst-registration-for-small-business', 'GST registration for small business', 'GST Guides', 'A simple guide to GST registration documents and next steps.', '/images/vbc/gst-business-compliance-consultation.png', '<p>Keep PAN, Aadhaar, business address proof, bank details and business activity details ready.</p>', 'GST Registration for Small Business | VB Consultants', 'Simple GST registration document guide for Indian small businesses.', 'gst,business', 'VB Consultants', 0, NULL)
+ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), summary=VALUES(summary), featured_image=VALUES(featured_image), content=VALUES(content), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), tags=VALUES(tags);
+
+INSERT INTO blog_posts (slug, title, category, excerpt, featured_image, content, seo_title, seo_description, status, author_name, published_at)
+SELECT slug, title, category, summary, featured_image, content, seo_title, seo_description, IF(published=1, 'published', 'draft'), author_name, published_at
+FROM blog_posts_cms
+ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), excerpt=VALUES(excerpt), featured_image=VALUES(featured_image), content=VALUES(content), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), status=VALUES(status);
+
+INSERT INTO local_seo_pages (city, state, slug, title, hero_title, body_content, related_services_json, faqs_json, meta_title, meta_description, image_path, active) VALUES
+('Bhubaneswar', 'Odisha', 'itr-filing-bhubaneswar', 'ITR Filing Support in Bhubaneswar', 'ITR filing support in Bhubaneswar', '<p>VB Consultants helps salaried people and families in Bhubaneswar start ITR filing online with secure upload and status tracking.</p>', '["salary-itr-filing","itr-1-filing","tax-notice-help"]', '[]', 'ITR Filing Support in Bhubaneswar | VB Consultants', 'Simple online ITR filing support for Bhubaneswar residents.', '/images/vbc/salary-itr-form-16-family.png', 1),
+('Odisha', 'Odisha', 'online-tax-services-odisha', 'Online Tax Services in Odisha', 'Online tax and business paperwork support in Odisha', '<p>Start ITR, GST, notice, loan and business paperwork support from your phone. Upload documents and track status online.</p>', '["salary-itr-filing","gst-return-filing","loan-project-report"]', '[]', 'Online Tax Services Odisha | VB Consultants', 'Online ITR, GST and business paperwork support for users in Odisha.', '/images/vbc/mobile-document-upload-india.png', 1)
+ON DUPLICATE KEY UPDATE title=VALUES(title), hero_title=VALUES(hero_title), body_content=VALUES(body_content), meta_title=VALUES(meta_title), meta_description=VALUES(meta_description), active=VALUES(active);
+
+INSERT INTO local_pages (city, state, slug, page_title, hero_title, body_content, related_services_json, faqs_json, meta_title, meta_description, image_path, active)
+SELECT city, state, slug, title, hero_title, body_content, related_services_json, faqs_json, meta_title, meta_description, image_path, active
+FROM local_seo_pages
+ON DUPLICATE KEY UPDATE page_title=VALUES(page_title), hero_title=VALUES(hero_title), body_content=VALUES(body_content), meta_title=VALUES(meta_title), meta_description=VALUES(meta_description), active=VALUES(active);
+
 INSERT INTO integration_settings (setting_key, setting_value, setting_group, is_secret) VALUES
 ('razorpay_key_id', '', 'razorpay', 0),
 ('razorpay_key_secret', '', 'razorpay', 1),
@@ -643,6 +887,17 @@ INSERT INTO integration_settings (setting_key, setting_value, setting_group, is_
 ('ai_chatbot_api_key', '', 'chatbot', 1),
 ('floating_lead_widget_enabled', '1', 'lead_widget', 0),
 ('email_followup_enabled', '0', 'email_followup', 0)
+ON DUPLICATE KEY UPDATE setting_group=VALUES(setting_group);
+
+INSERT INTO app_settings (setting_key, setting_value, setting_group, is_secret) VALUES
+('brand_name', 'VB Consultants', 'brand', 0),
+('registered_business_name', 'Veedanath Business Consultants', 'brand', 0),
+('frontend_url', 'https://www.vbcbharat.com', 'urls', 0),
+('api_url', 'https://api.vbcbharat.com', 'urls', 0),
+('session_cookie_name', 'vbc_session', 'auth', 0),
+('session_cookie_domain', '.vbcbharat.com', 'auth', 0),
+('session_days', '30', 'auth', 0),
+('revalidate_seconds', '300', 'frontend', 0)
 ON DUPLICATE KEY UPDATE setting_group=VALUES(setting_group);
 
 INSERT INTO email_templates (template_key, subject, body, active) VALUES

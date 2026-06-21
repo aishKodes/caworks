@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { serviceOptions } from "@/data/services";
 import { createServiceRequest } from "@/lib/api";
+import { buildAuthRedirectUrl, requireAuthForIntent } from "@/lib/authRedirect";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3 text-sm text-charcoal-900 shadow-sm transition placeholder:text-muted/70 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
@@ -17,16 +18,26 @@ export function ServiceRequestForm({ defaultService = "salary-itr-filing" }: { d
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const serviceType = String(formData.get("serviceType") || defaultService);
+    const returnTo = `/request-service?service=${encodeURIComponent(serviceType)}`;
+    const isLoggedIn = await requireAuthForIntent(router, "service_request", returnTo, serviceType);
+    if (!isLoggedIn) return;
+
     setStatus("loading");
     const result = await createServiceRequest({
-      serviceType: String(formData.get("serviceType") || ""),
+      serviceType,
       incomeType: String(formData.get("incomeType") || ""),
       city: String(formData.get("city") || ""),
       details: String(formData.get("details") || "")
     });
 
     if (result.ok && result.data?.request?.id) {
-      router.push(`/dashboard/upload?requestId=${result.data.request.id}`);
+      router.push(`/dashboard/upload?requestId=${result.data.request.id}&service=${encodeURIComponent(serviceType)}`);
+      return;
+    }
+
+    if (result.status === 401) {
+      router.push(buildAuthRedirectUrl({ intent: "service_request", returnTo, serviceSlug: serviceType }));
       return;
     }
 

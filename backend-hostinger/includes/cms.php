@@ -49,9 +49,18 @@ function cms_revalidate_paths(array $paths): bool {
     if (!$url || !$secret || !$cleanPaths) {
         return false;
     }
+    $logId = null;
+    try {
+        $stmt = db()->prepare('INSERT INTO revalidation_logs (paths_json, status) VALUES (?, ?)');
+        $stmt->execute([json_encode($cleanPaths), 'started']);
+        $logId = (int) db()->lastInsertId();
+    } catch (Throwable $ignored) {
+    }
     $endpoint = $url . (str_contains($url, '?') ? '&' : '?') . 'secret=' . rawurlencode($secret);
     $payload = json_encode(['paths' => $cleanPaths]);
     try {
+        $ok = false;
+        $responseText = '';
         if (function_exists('curl_init')) {
             $ch = curl_init($endpoint);
             curl_setopt_array($ch, [
@@ -61,22 +70,34 @@ function cms_revalidate_paths(array $paths): bool {
                 CURLOPT_POSTFIELDS => $payload,
                 CURLOPT_TIMEOUT => 4,
             ]);
-            curl_exec($ch);
+            $responseText = (string) curl_exec($ch);
             $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
-            return $status >= 200 && $status < 300;
+            $ok = $status >= 200 && $status < 300;
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => "Content-Type: application/json\r\n",
+                    'content' => $payload,
+                    'timeout' => 4,
+                ],
+            ]);
+            $result = @file_get_contents($endpoint, false, $context);
+            $responseText = is_string($result) ? $result : '';
+            $ok = $result !== false;
         }
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\n",
-                'content' => $payload,
-                'timeout' => 4,
-            ],
-        ]);
-        $result = @file_get_contents($endpoint, false, $context);
-        return $result !== false;
+        if ($logId) {
+            db()->prepare('UPDATE revalidation_logs SET status=?, response_text=?, completed_at=NOW() WHERE id=?')->execute([$ok ? 'success' : 'failed', substr($responseText, 0, 2000), $logId]);
+        }
+        return $ok;
     } catch (Throwable $ignored) {
+        if ($logId) {
+            try {
+                db()->prepare('UPDATE revalidation_logs SET status=?, response_text=?, completed_at=NOW() WHERE id=?')->execute(['failed', $ignored->getMessage(), $logId]);
+            } catch (Throwable $ignoredAgain) {
+            }
+        }
         return false;
     }
 }

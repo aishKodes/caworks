@@ -12,7 +12,7 @@ export const metadata: Metadata = buildMetadata({
   noIndex: true
 });
 
-export default function DashboardUploadPage({ searchParams }: { searchParams: Promise<{ requestId?: string }> }) {
+export default function DashboardUploadPage({ searchParams }: { searchParams: Promise<{ requestId?: string; service?: string }> }) {
   return (
     <DashboardLayout>
       <UploadContent searchParams={searchParams} />
@@ -20,7 +20,7 @@ export default function DashboardUploadPage({ searchParams }: { searchParams: Pr
   );
 }
 
-async function UploadContent({ searchParams }: { searchParams: Promise<{ requestId?: string }> }) {
+async function UploadContent({ searchParams }: { searchParams: Promise<{ requestId?: string; service?: string }> }) {
   const params = await searchParams;
-  return <DocumentUploadForm requestId={params.requestId} checklistType="salary" />;
+  return <DocumentUploadForm requestId={params.requestId} checklistType="salary" initialServiceSlug={params.service} />;
 }

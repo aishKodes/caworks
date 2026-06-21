@@ -6,6 +6,8 @@ export type ApiResult<T = unknown> = {
   ok: boolean;
   data?: T;
   message?: string;
+  status?: number;
+  request_id?: string;
 };
 
 export type QuickLeadPayload = {
@@ -19,16 +21,23 @@ export type QuickLeadPayload = {
 };
 
 export type SignupPayload = {
-  fullName: string;
+  fullName?: string;
+  name?: string;
   phone: string;
   email: string;
   password: string;
-  consent: boolean;
+  confirm_password?: string;
+  confirmPassword?: string;
+  consent?: boolean;
+  service?: string;
+  intent?: string;
+  returnTo?: string;
 };
 
 export type LoginPayload = {
   identifier: string;
   password: string;
+  remember?: boolean;
 };
 
 export type ServiceRequestPayload = {
@@ -108,10 +117,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   }
 
   if (!response.ok) {
-    return { ok: false, message: payload.message || "Something went wrong." };
+    return { ok: false, message: payload.message || "Something went wrong.", status: response.status, request_id: payload.request_id };
   }
 
-  return payload;
+  return { ...payload, status: response.status };
 }
 
 function jsonRequest<T>(path: string, body: unknown) {
@@ -199,6 +208,7 @@ export type UserSummary = {
   id: number;
   tax_help_id: string;
   full_name: string;
+  name?: string;
   phone: string;
   email: string;
 };

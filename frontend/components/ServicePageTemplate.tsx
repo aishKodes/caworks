@@ -1,8 +1,8 @@
-import Link from "next/link";
 import Image from "next/image";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { FAQAccordion } from "@/components/FAQAccordion";
+import { IntentLink } from "@/components/IntentLink";
 import { ProcessSteps } from "@/components/ProcessSteps";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -55,12 +55,12 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
           <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{service.heroTitle}</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">{service.heroText}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/start" className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
+            <IntentLink href={`/request-service?service=${service.slug}`} intent="service_request" serviceSlug={service.slug} className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
               Start request
-            </Link>
-            <Link href="/upload-documents" className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
+            </IntentLink>
+            <IntentLink href={`/upload-documents?service=${service.slug}`} intent="upload_documents" serviceSlug={service.slug} className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
               Upload Documents
-            </Link>
+            </IntentLink>
             <WhatsAppButton message={getWhatsAppMessage(service)} />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">

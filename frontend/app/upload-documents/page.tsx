@@ -16,7 +16,8 @@ export const metadata: Metadata = buildMetadata({
   noIndex: true
 });
 
-export default function UploadDocumentsPage() {
+export default async function UploadDocumentsPage({ searchParams }: { searchParams: Promise<{ service?: string; requestId?: string }> }) {
+  const params = await searchParams;
   return (
     <>
       <Breadcrumbs items={[{ name: "Upload Documents", href: "/upload-documents" }]} />
@@ -32,7 +33,7 @@ export default function UploadDocumentsPage() {
             <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />
           </div>
         </div>
-        <DocumentUploadForm checklistType="salary" />
+        <DocumentUploadForm checklistType="salary" initialServiceSlug={params.service} requestId={params.requestId} />
       </section>
       <CTASection className="pb-16" />
     </>

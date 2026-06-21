@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import {
   documentServiceOptions,
@@ -10,6 +11,7 @@ import {
 } from "@/data/documentRequirements";
 import { whatsappMessages } from "@/data/site.config";
 import { uploadDocuments } from "@/lib/api";
+import { buildAuthRedirectUrl, requireAuthForIntent } from "@/lib/authRedirect";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3.5 text-base text-charcoal-900 shadow-sm transition focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
@@ -36,6 +38,7 @@ export function DocumentUploadForm({
   checklistType?: "salary" | "gst" | "loan";
   initialServiceSlug?: string;
 }) {
+  const router = useRouter();
   const [serviceSlug, setServiceSlug] = useState(initialServiceSlug || checklistTypeToService(checklistType));
   const [requirements, setRequirements] = useState<DocumentRequirement[]>(() => getFallbackDocumentRequirements(initialServiceSlug || checklistTypeToService(checklistType)));
   const [filesByKey, setFilesByKey] = useState<FileState>({});
@@ -84,6 +87,10 @@ export function DocumentUploadForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const returnTo = `/upload-documents?service=${encodeURIComponent(serviceSlug)}${requestId ? `&requestId=${encodeURIComponent(requestId)}` : ""}`;
+    const isLoggedIn = await requireAuthForIntent(router, "upload_documents", returnTo, serviceSlug, requestId);
+    if (!isLoggedIn) return;
+
     const missing = requirements.filter((requirement) => requirement.required && !(filesByKey[requirement.documentKey] || []).length);
 
     if (serviceSlug === "not-sure" && details.trim().length < 8) {
@@ -129,6 +136,10 @@ export function DocumentUploadForm({
       setStatus("success");
       setMessage(result.message || "Documents uploaded. We will check and update your request.");
     } else {
+      if (result.status === 401) {
+        router.push(buildAuthRedirectUrl({ intent: "upload_documents", returnTo, serviceSlug, requestId }));
+        return;
+      }
       setStatus("error");
       setMessage(result.message || "Upload failed. Please try again or use WhatsApp.");
     }

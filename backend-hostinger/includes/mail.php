@@ -256,6 +256,24 @@ function send_email(string $to, string $subject, string $body, array $options = 
     return send_email_result($to, $subject, $body, $options)['ok'];
 }
 
+function safe_send_email(string $to, string $subject, string $body, array $options = []): array {
+    try {
+        return send_email_result($to, $subject, $body, $options);
+    } catch (Throwable $e) {
+        mail_log_attempt([
+            'event_type' => $options['event_type'] ?? 'safe_send_email',
+            'recipient' => $to,
+            'subject' => $subject,
+            'status' => 'failed',
+            'provider' => 'smtp',
+            'error_message' => $e->getMessage(),
+            'related_user_id' => $options['related_user_id'] ?? null,
+            'related_request_id' => $options['related_request_id'] ?? null,
+        ]);
+        return ['ok' => false, 'status' => 'failed', 'error' => mail_safe_error($e->getMessage())];
+    }
+}
+
 function render_email_template(string $templateKey, array $vars, string $fallbackSubject, string $fallbackBody): array {
     $subject = $fallbackSubject;
     $body = $fallbackBody;
