@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
-require_admin_page();
+require_permission('manage_homepage');
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_post_csrf();
     $content = [
         'trustBadges' => cms_decode_json($_POST['trust_badges'] ?? '[]', []),
         'featuredServices' => cms_decode_json($_POST['featured_services'] ?? '[]', []),
@@ -25,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json_encode($content),
         isset($_POST['is_visible']) ? 1 : 0,
     ]);
+    audit_log((int) current_admin()['id'], null, 'homepage_updated', 'Homepage CMS content updated.');
+    cms_revalidate_paths(['/', '/sitemap.xml']);
     $message = 'Homepage content saved.';
 }
 $stmt = db()->prepare('SELECT * FROM homepage_sections WHERE section_key=? LIMIT 1');
@@ -35,6 +38,7 @@ admin_header('Homepage Settings');
 if ($message) echo '<div class="notice">' . e($message) . '</div>';
 ?>
 <form method="post" class="grid two">
+  <?= csrf_field() ?>
   <div class="card">
     <label class="field"><span>Hero title</span><textarea name="hero_title"><?= e($row['title'] ?? '') ?></textarea></label>
     <label class="field"><span>Hero subtitle</span><textarea name="hero_subtitle"><?= e($row['subtitle'] ?? '') ?></textarea></label>

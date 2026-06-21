@@ -23,9 +23,11 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=91XXXXXXXXXX
 NEXT_PUBLIC_BRAND_NAME=VB Consultants
 NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
+REVALIDATE_SECRET=change_this_if_revalidation_is_used
 ```
 
 The frontend works without backend configuration by showing a graceful error and keeping WhatsApp visible.
+Public CMS content is fetched on the server from the Hostinger API with static fallback. Marketing and SEO pages use ISR with a 300-second revalidate window. Admin saves can call `/api/revalidate` when `REVALIDATE_SECRET` is configured.
 
 ## Vercel deployment settings
 

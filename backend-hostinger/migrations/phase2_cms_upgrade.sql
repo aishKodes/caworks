@@ -119,12 +119,12 @@ CREATE TABLE IF NOT EXISTS scheduled_reminders (
 INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name) VALUES
 ('business_name', 'VB Consultants', 'text', 'site'),
 ('registered_business_name', 'Veedanath Business Consultants', 'text', 'site'),
-('logo', '/images/vbc-logo.svg', 'text', 'site'),
+('logo', '/images/vbc/logo-horizontal.png', 'text', 'site'),
 ('favicon', '/favicon.svg', 'text', 'site'),
 ('tagline', 'Tax, GST, loans and business paperwork made simple.', 'text', 'site'),
 ('phone', '+91 90000 00000', 'text', 'site'),
 ('whatsapp_number', '919000000000', 'text', 'site'),
-('support_email', 'support@vbcbharat.com', 'text', 'site'),
+('support_email', 'consult@vbcbharat.com', 'text', 'site'),
 ('address', 'Office address placeholder, Bhubaneswar, Odisha 751001', 'text', 'site'),
 ('footer_text', 'Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance.', 'text', 'site'),
 ('social_links', '{}', 'json', 'site')

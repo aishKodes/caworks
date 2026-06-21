@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
-require_admin_page();
+$admin = require_permission('export_data');
+audit_log((int) $admin['id'], null, 'lead_export', 'Leads CSV exported.');
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="leads.csv"');
 $out = fopen('php://output', 'w');

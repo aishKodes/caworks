@@ -10,6 +10,8 @@ export const metadata: Metadata = buildMetadata({
   noIndex: true
 });
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   return (
     <DashboardLayout>

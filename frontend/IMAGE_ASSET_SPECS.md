@@ -23,10 +23,10 @@ Brand rules:
 
 | Asset key | Where used | Current component/file | Required desktop size | Required mobile size | Aspect ratio | CSS object-fit used | Recommended object-position | Safe area notes | Text inside image? | Final recommended file name |
 |---|---|---|---:|---:|---:|---|---|---|---|---|
-| `logoMark` | Header logo icon, footer logo icon, schema logo | `components/Header.tsx`, `components/Footer.tsx`, `lib/schema.ts`, `data/images.ts` | SVG viewBox 256x256 | SVG viewBox 256x256 | 1:1 | `object-contain` | center | Keep mark inside 72% center safe area. Must remain clear at 32px. | No | `/images/vbc/logo-mark.svg` |
-| `logoHorizontal` | Optional larger brand placements, admin/media use, future PDFs | `data/images.ts` | SVG viewBox 960x256 | SVG viewBox 960x256 | 15:4 | `object-contain` when used | center | Do not use in navbar. Use only where width is at least 220px. | SVG text is acceptable for logo artwork only | `/images/vbc/logo-horizontal.svg` |
-| `favicon` | Browser tab, metadata icon | `public/favicon.svg`, `app/layout.tsx`, `app/manifest.ts` | SVG viewBox 256x256 | SVG viewBox 256x256 | 1:1 | browser icon | center | Use simplified mark only. No small tagline. | No | `/favicon.svg` |
-| `appleTouchIcon` | iOS home-screen icon | `public/apple-touch-icon.png`, `app/layout.tsx`, `app/manifest.ts` | 180x180 PNG | 180x180 PNG | 1:1 | browser icon | center | Export from `logo-mark.svg`; no transparency issues; keep white background. | No | `/apple-touch-icon.png` |
+| `logoMark` | Header logo icon, footer logo icon, schema logo | `components/Header.tsx`, `components/Footer.tsx`, `lib/schema.ts`, `data/images.ts` | 1254x1254 PNG | same source displayed at 44px | 1:1 | `object-contain` | center | Use the exact selected mark from `logomain.png`. Do not crop, stretch, recolor or trace unless a clean selected vector is supplied. | No | `/images/vbc/logo-mark.png` |
+| `logoHorizontal` | Optional larger brand placements, admin/media use, future PDFs | `data/images.ts` | 2172x724 PNG | same source, display only where wide enough | 3:1 | `object-contain` when used | center | Use the exact selected horizontal logo from `vb-consultants-logo-wide.png`. Do not use the old simplified placeholder. | Logo text only | `/images/vbc/logo-horizontal.png` |
+| `favicon` | Browser tab, metadata icon | `public/favicon.svg`, `app/layout.tsx`, `app/manifest.ts` | SVG wrapper around selected mark | same | 1:1 | browser icon | center | Embed/use the selected mark only. No tagline. | No | `/favicon.svg` |
+| `appleTouchIcon` | iOS home-screen icon | `public/apple-touch-icon.png`, `app/layout.tsx`, `app/manifest.ts` | 180x180 PNG | 180x180 PNG | 1:1 | browser icon | center | Export from selected `logomain.png`; keep white background. | No | `/apple-touch-icon.png` |
 | `heroPremium` | Homepage hero right-side image, Open Graph default image source | `components/HeroSection.tsx`, `app/page.tsx`, `app/layout.tsx`, `lib/seo.ts`, `data/images.ts` | 1920x1200 | same asset displayed around 328x205 at 360px width | 16:10 | `object-cover` | `62% center` | Put people/phone in right-center. Keep important faces and phone inside middle 70% width and 80% height. Leave soft empty space on left. | No | `/images/vbc/vbc-hero-senior-couple-simple-digital-tax.png` |
 | `salaryItr` | Popular service card, salary ITR homepage section, salary/ITR service pages, salary blog placeholders | `app/page.tsx`, `components/ServicePageTemplate.tsx`, `data/blogPosts.ts`, `data/images.ts` | 1600x1200 | same asset displayed around 328x246 on mobile cards | 4:3 | `object-cover` | center | Show family/salaried person with Form 16, PAN-like generic papers, phone. Keep faces, hands, documents centered. | No | `/images/vbc/salary-itr-form-16-family.png` |
 | `gstConsultation` | Popular service card, GST pages, business pages, about/contact image, why-choose section | `app/page.tsx`, `components/ServicePageTemplate.tsx`, `components/ContactSection.tsx`, `app/[slug]/page.tsx`, `data/images.ts` | 1600x1200 | same asset displayed around 328x246 | 4:3 | `object-cover` | center | Show small business owner and advisor reviewing invoices/GST records. Keep laptop, documents, hands, faces in central 70%. | No | `/images/vbc/gst-business-compliance-consultation.png` |
@@ -59,11 +59,11 @@ These files are placeholders or first-pass generated assets. Replace them in pla
 - `/public/images/vbc/loan-project-report-business-support.png` should become a 1600x1200 4:3 service image.
 - Current blog posts reuse service images. Generate the four dedicated 1200x675 blog thumbnails above and update `data/blogPosts.ts`.
 - Current testimonial avatars use generic placeholders. Generate the two 512x512 avatar placeholders and update `data/testimonials.ts`.
-- The old wide raster logo `/public/images/vbc/vb-consultants-logo-wide.png` is no longer used in header/footer. Keep only as an archive until final cleanup.
+- The selected horizontal raster logo `/public/images/vbc/vb-consultants-logo-wide.png` is the source for `/public/images/vbc/logo-horizontal.png`.
 
 ## CSS/Component Adjustments Already Made
 
-- Header/footer logo now uses `logo-mark.svg` with `object-contain`, not a cropped wide raster PNG.
+- Header/footer logo now uses selected `logo-mark.png` with `object-contain`, not the old simplified SVG placeholder.
 - Homepage hero image container now uses `aspect-[16/10]` to match the required 1920x1200 asset.
 - Homepage hero copy now has an explicit small-screen width ceiling and word wrapping so text, CTA buttons, and trust copy do not clip on 360px screens.
 - Popular service cards now use `aspect-[4/3]` to match 1600x1200 service images.

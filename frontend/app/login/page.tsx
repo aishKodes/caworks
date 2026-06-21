@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/components/LoginForm";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Login",
   description: "Login with phone, email or Tax Help ID to track requests.",

@@ -89,6 +89,8 @@ const businessLinks: Record<string, string> = {
   "Subsidy guidance": "/subsidy-scheme-guidance"
 };
 
+export const revalidate = 300;
+
 export const metadata: Metadata = buildMetadata({
   title: siteConfig.defaultTitle,
   description: siteConfig.description,
@@ -289,7 +291,7 @@ export default async function HomePage() {
         <div className="container-shell">
           <SectionHeader eyebrow="User notes" title="Placeholder testimonials" description="Replace these with approved real feedback later." />
           <div className="mt-9">
-            <TestimonialCards />
+            <TestimonialCards items={homepageContent.testimonials} />
           </div>
         </div>
       </section>

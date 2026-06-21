@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
-require_admin_page();
+$admin = require_permission('download_documents');
 $id = (int) ($_GET['id'] ?? 0);
 $stmt = db()->prepare('SELECT * FROM documents WHERE id=?');
 $stmt->execute([$id]);
@@ -12,5 +12,6 @@ if (!$doc || !is_file($doc['path'])) {
 header('Content-Type: application/octet-stream');
 header('Content-Disposition: attachment; filename="' . basename($doc['original_name']) . '"');
 header('Content-Length: ' . filesize($doc['path']));
+audit_log((int) $admin['id'], (int) ($doc['user_id'] ?? 0), 'document_download', 'Document ' . $id . ' downloaded.');
 readfile($doc['path']);
 exit;

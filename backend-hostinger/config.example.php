@@ -1,7 +1,10 @@
 <?php
 return [
     'app_env' => 'production',
+    'app_url' => 'https://api.vbcbharat.com',
+    'frontend_url' => 'https://www.vbcbharat.com',
     'app_secret' => 'change-this-long-random-secret',
+    'INSTALLER_SECRET' => 'change-this-one-time-installer-secret',
     'allowed_origin' => 'https://www.vbcbharat.com',
     'mysql' => [
         'host' => 'localhost',
@@ -11,12 +14,16 @@ return [
         'charset' => 'utf8mb4',
     ],
     'smtp' => [
+        'enabled' => true,
         'host' => 'smtp.hostinger.com',
-        'username' => 'support@vbcbharat.com',
-        'password' => 'smtp_password',
         'port' => 465,
-        'from_email' => 'support@vbcbharat.com',
+        'encryption' => 'ssl',
+        'username' => 'consult@vbcbharat.com',
+        'password' => 'your_mailbox_password',
+        'from_email' => 'consult@vbcbharat.com',
         'from_name' => 'VB Consultants',
+        'reply_to' => 'consult@vbcbharat.com',
+        'debug' => false,
     ],
     'razorpay' => [
         'key_id' => 'rzp_test_xxxxxxxxxxxxx',
@@ -24,9 +31,14 @@ return [
         'webhook_secret' => 'razorpay_webhook_secret',
     ],
     'whatsapp_number' => '919000000000',
-    'admin_email' => 'admin@example.com',
+    'admin_email' => 'consult@vbcbharat.com',
     'upi_id' => 'payments@exampleupi',
     'upload_dir' => __DIR__ . '/uploads',
     'media_dir' => __DIR__ . '/media',
     'media_base_url' => 'https://api.vbcbharat.com/media',
+    'frontend_revalidate_url' => 'https://www.vbcbharat.com/api/revalidate',
+    'frontend_revalidate_secret' => 'change_this_if_revalidation_is_used',
+    'max_upload_size' => 8 * 1024 * 1024,
+    'max_media_size' => 4 * 1024 * 1024,
+    'admin_session_timeout' => 60 * 60 * 8,
 ];

@@ -5,6 +5,8 @@ import { buildMetadata } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ id: string }> };
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Request Details",
   description: "View request details, documents, payment and status timeline.",

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { siteConfig } from "@/data/site.config";
 import { services, type Service } from "@/data/services";
+import type { MenuServiceContent } from "@/lib/content";
 import { cn } from "@/lib/utils";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
@@ -32,22 +33,45 @@ const menuGroups = [
   }
 ] as const;
 
-function serviceBySlug(slug: string): Service | { slug: string; label: string; heroText: string } | null {
+type HeaderServiceItem = Service | { slug: string; label: string; heroText: string; category?: string };
+
+function serviceBySlug(slug: string): HeaderServiceItem | null {
   if (slug === "upload-documents") return { slug, label: "Document Upload", heroText: "Upload files or send documents from your phone." };
   if (slug === "track-status") return { slug, label: "Track Status", heroText: "Check request, payment and document status." };
   return services.find((service) => service.slug === slug) || null;
 }
 
-export function Header() {
+function categoryTitle(category?: string) {
+  const value = (category || "").toLowerCase();
+  if (value.includes("individual") || value === "itr" || value === "support") return "Individuals";
+  if (value.includes("loan") || value.includes("subsidy")) return "Loans & Subsidy";
+  return "Business";
+}
+
+function groupCmsServices(items: MenuServiceContent[]) {
+  const grouped = new Map<string, HeaderServiceItem[]>();
+  for (const item of items) {
+    const title = categoryTitle(item.category);
+    grouped.set(title, [...(grouped.get(title) || []), item]);
+  }
+  grouped.set("Individuals", [
+    ...(grouped.get("Individuals") || []),
+    { slug: "upload-documents", label: "Document Upload", heroText: "Upload files or send documents from your phone." },
+    { slug: "track-status", label: "Track Status", heroText: "Check request, payment and document status." }
+  ]);
+  return Array.from(grouped.entries()).map(([title, groupedItems]) => ({ title, items: groupedItems }));
+}
+
+export function Header({ menuServices = [] }: { menuServices?: MenuServiceContent[] }) {
   const [open, setOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const servicesMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const groupedServices = useMemo(
-    () => menuGroups.map((group) => ({ ...group, items: group.slugs.map(serviceBySlug).filter(Boolean) as Array<Service | { slug: string; label: string; heroText: string }> })),
-    []
-  );
+  const groupedServices = useMemo(() => {
+    if (menuServices.length) return groupCmsServices(menuServices);
+    return menuGroups.map((group) => ({ ...group, items: group.slugs.map(serviceBySlug).filter(Boolean) as HeaderServiceItem[] }));
+  }, [menuServices]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -79,7 +103,7 @@ export function Header() {
       <div className="container-shell flex min-h-[72px] items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label={`${siteConfig.name} home`}>
           <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-charcoal-900/10">
-            <Image src={siteConfig.images.logoMark} alt="" fill priority sizes="44px" className="object-contain p-1.5" />
+            <Image src={siteConfig.images.logoMark} alt="" fill priority sizes="44px" className="object-contain" />
           </span>
           <span>
             <span className="block text-lg font-semibold tracking-tight text-charcoal-900">{siteConfig.name}</span>

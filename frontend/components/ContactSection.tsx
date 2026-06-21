@@ -2,8 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { siteConfig } from "@/data/site.config";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { getSiteSettingsContent } from "@/lib/content";
 
-export function ContactSection() {
+export async function ContactSection() {
+  const settings = await getSiteSettingsContent();
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
       <div className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft md:p-8">
@@ -13,15 +15,15 @@ export function ContactSection() {
         <div className="mt-6 grid gap-4 text-sm leading-7 text-charcoal-700 sm:grid-cols-2">
           <div>
             <p className="font-semibold text-charcoal-900">Phone</p>
-            <p>{siteConfig.phone}</p>
+            <p>{settings.phone}</p>
           </div>
           <div>
             <p className="font-semibold text-charcoal-900">Email</p>
-            <Link href={`mailto:${siteConfig.email}`} className="hover:text-brand-700">{siteConfig.email}</Link>
+            <Link href={`mailto:${settings.support_email}`} className="hover:text-brand-700">{settings.support_email}</Link>
           </div>
           <div className="sm:col-span-2">
             <p className="font-semibold text-charcoal-900">Address</p>
-            <p>{siteConfig.address}</p>
+            <p>{settings.address}</p>
           </div>
         </div>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">

@@ -24,6 +24,13 @@ export function RequestDetailClient({ id }: { id: string }) {
     return <div className="rounded-2xl bg-white p-6 shadow-soft">{message}</div>;
   }
 
+  const groupedDocuments = (request.documents || []).reduce<Record<string, NonNullable<ServiceRequestDetail["documents"]>>>((groups, doc) => {
+    const label = doc.document_label || doc.document_type || "Document";
+    groups[label] = groups[label] || [];
+    groups[label].push(doc);
+    return groups;
+  }, {});
+
   return (
     <div className="grid gap-6">
       <div className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
@@ -40,9 +47,19 @@ export function RequestDetailClient({ id }: { id: string }) {
         </div>
         <div className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
           <h2 className="text-xl font-semibold text-charcoal-900">Documents</h2>
-          <div className="mt-4 grid gap-2">
-            {request.documents?.length ? request.documents.map((doc) => (
-              <div key={doc.id} className="rounded-2xl bg-paper p-3 text-sm text-charcoal-700">{doc.document_type}: {doc.original_name}</div>
+          <div className="mt-4 grid gap-3">
+            {Object.keys(groupedDocuments).length ? Object.entries(groupedDocuments).map(([label, docs]) => (
+              <section key={label} className="rounded-2xl bg-paper p-4">
+                <h3 className="text-sm font-semibold text-charcoal-900">{label}</h3>
+                <div className="mt-3 grid gap-2">
+                  {docs.map((doc) => (
+                    <div key={doc.id} className="rounded-xl bg-white px-3 py-2 text-sm text-charcoal-700">
+                      <span className="font-medium">{doc.original_name}</span>
+                      <span className="block text-xs text-muted">{Math.max(1, Math.round(doc.size / 1024))} KB · {doc.uploaded_at || doc.created_at}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )) : <p className="text-sm text-muted">No documents uploaded yet.</p>}
           </div>
         </div>

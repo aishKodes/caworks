@@ -86,11 +86,53 @@ function require_admin(): array {
     if (!$payload) {
         fail('Admin login required.', 401);
     }
-    $stmt = db()->prepare('SELECT id, email, full_name FROM admin_users WHERE id = ?');
+    $stmt = db()->prepare('SELECT * FROM admin_users WHERE id = ?');
     $stmt->execute([(int) $payload['sub']]);
     $admin = $stmt->fetch();
-    if (!$admin) {
+    if (!$admin || (isset($admin['active']) && !(int) $admin['active'])) {
         fail('Admin not found.', 401);
+    }
+    $admin['role'] = $admin['role'] ?? 'super_admin';
+    return $admin;
+}
+
+function admin_api_permissions(): array {
+    $all = [
+        'view_dashboard', 'manage_users', 'manage_staff', 'view_leads', 'manage_leads',
+        'view_requests', 'manage_requests', 'view_documents', 'download_documents',
+        'delete_documents', 'view_payments', 'verify_payments', 'manage_pricing',
+        'manage_site_settings', 'manage_homepage', 'manage_services', 'manage_blog',
+        'manage_media', 'manage_seo', 'manage_integrations', 'export_data', 'view_audit_logs'
+    ];
+    return [
+        'super_admin' => $all,
+        'admin' => array_values(array_diff($all, ['delete_documents'])),
+        'staff' => ['view_dashboard', 'view_leads', 'manage_leads', 'view_requests', 'manage_requests', 'view_documents', 'download_documents', 'view_payments'],
+        'content_editor' => ['view_dashboard', 'manage_site_settings', 'manage_homepage', 'manage_services', 'manage_blog', 'manage_media', 'manage_seo', 'manage_pricing'],
+        'accountant' => ['view_dashboard', 'view_requests', 'manage_requests', 'view_documents', 'download_documents', 'view_payments', 'verify_payments'],
+        'viewer' => ['view_dashboard', 'view_leads', 'view_requests', 'view_documents', 'view_payments'],
+    ];
+}
+
+function admin_can_api(array $admin, string $permission): bool {
+    $role = $admin['role'] ?? 'viewer';
+    if ($role === 'super_admin') return true;
+    try {
+        $stmt = db()->prepare('SELECT 1 FROM admin_user_permissions WHERE admin_id=? AND permission_key=? LIMIT 1');
+        $stmt->execute([(int) $admin['id'], $permission]);
+        if ($stmt->fetch()) return true;
+        $stmt = db()->prepare('SELECT 1 FROM admin_role_permissions WHERE role_key=? AND permission_key=? LIMIT 1');
+        $stmt->execute([$role, $permission]);
+        if ($stmt->fetch()) return true;
+    } catch (Throwable $ignored) {
+    }
+    return in_array($permission, admin_api_permissions()[$role] ?? [], true);
+}
+
+function require_admin_permission(string $permission): array {
+    $admin = require_admin();
+    if (!admin_can_api($admin, $permission)) {
+        fail('Access denied.', 403);
     }
     return $admin;
 }

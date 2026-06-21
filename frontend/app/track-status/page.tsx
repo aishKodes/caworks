@@ -6,10 +6,13 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Track Status",
   description: "Login to track request, document, payment and filing status.",
-  path: "/track-status"
+  path: "/track-status",
+  noIndex: true
 });
 
 export default function TrackStatusPage() {

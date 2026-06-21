@@ -1,7 +1,7 @@
 export const imageConfig = {
-  logo: "/images/vbc/logo-mark.svg",
-  logoMark: "/images/vbc/logo-mark.svg",
-  logoHorizontal: "/images/vbc/logo-horizontal.svg",
+  logo: "/images/vbc/logo-mark.png",
+  logoMark: "/images/vbc/logo-mark.png",
+  logoHorizontal: "/images/vbc/logo-horizontal.png",
   appleTouchIcon: "/apple-touch-icon.png",
   ogDefault: "/images/vbc/og-default-vb-consultants.png",
   heroPremium: "/images/vbc/vbc-hero-senior-couple-simple-digital-tax.png",

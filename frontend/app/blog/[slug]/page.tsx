@@ -7,20 +7,23 @@ import { CTASection } from "@/components/CTASection";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ServiceCard } from "@/components/ServiceCard";
-import { blogPosts, getBlogPostBySlug } from "@/data/blogPosts";
 import { getRelatedServices } from "@/data/services";
+import { getBlogContent, getBlogPostContent } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import { getArticleSchema, getBreadcrumbSchema } from "@/lib/schema";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const posts = await getBlogContent();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostContent(slug);
   if (!post) return {};
   return buildMetadata({
     title: post.metaTitle,
@@ -34,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostContent(slug);
   if (!post) notFound();
   const related = getRelatedServices(post.relatedServices);
 
@@ -69,18 +72,22 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl space-y-7">
-          {post.sections.map((section) => (
-            <section key={section.heading} className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
-              <h2 className="text-2xl font-semibold tracking-tight text-charcoal-900">{section.heading}</h2>
-              <div className="mt-4 space-y-4">
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph} className="text-base leading-8 text-charcoal-700">{paragraph}</p>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        {"contentHtml" in post && post.contentHtml ? (
+          <div className="mx-auto mt-10 max-w-3xl rounded-3xl border border-charcoal-900/10 bg-white p-6 text-base leading-8 text-charcoal-700 shadow-soft" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+        ) : (
+          <div className="mx-auto mt-10 max-w-3xl space-y-7">
+            {post.sections.map((section) => (
+              <section key={section.heading} className="rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
+                <h2 className="text-2xl font-semibold tracking-tight text-charcoal-900">{section.heading}</h2>
+                <div className="mt-4 space-y-4">
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph} className="text-base leading-8 text-charcoal-700">{paragraph}</p>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
 
         <div className="mx-auto mt-10 max-w-3xl rounded-3xl border border-charcoal-900/10 bg-white p-6 shadow-soft">
           <h2 className="text-xl font-semibold text-charcoal-900">Guide details</h2>

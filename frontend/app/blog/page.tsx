@@ -3,7 +3,7 @@ import { BlogCard } from "@/components/BlogCard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
-import { blogPosts } from "@/data/blogPosts";
+import { getBlogContent } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import { getBreadcrumbSchema } from "@/lib/schema";
 
@@ -13,7 +13,10 @@ export const metadata: Metadata = buildMetadata({
   path: "/blog"
 });
 
-export default function BlogPage() {
+export const revalidate = 300;
+
+export default async function BlogPage() {
+  const posts = await getBlogContent();
   return (
     <>
       <SEOJsonLd data={getBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "Guides", path: "/blog" }])} />
@@ -23,7 +26,7 @@ export default function BlogPage() {
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Simple tax and paperwork guides.</h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">Read simple guides, then start a request if you need help.</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {blogPosts.map((post) => <BlogCard key={post.slug} post={post} />)}
+          {posts.map((post) => <BlogCard key={post.slug} post={post} />)}
         </div>
       </section>
       <CTASection className="pb-16" />

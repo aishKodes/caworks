@@ -16,7 +16,7 @@ export const siteConfig = {
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.vbcbharat.com",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919000000000",
   razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-  email: "support@vbcbharat.com",
+  email: "consult@vbcbharat.com",
   phone: "+91 90000 00000",
   upiId: "vbc@upi",
   address: "Office address placeholder, Bhubaneswar, Odisha 751001",

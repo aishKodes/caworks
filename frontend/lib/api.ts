@@ -90,7 +90,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
     response = await fetch(`${base}${path}`, {
       ...options,
       headers,
-      credentials: "include"
+      credentials: "include",
+      cache: options.cache ?? "no-store"
     });
   } catch {
     return {
@@ -218,9 +219,11 @@ export type ServiceRequestDetail = ServiceRequestSummary & {
   documents?: Array<{
     id: number;
     document_type: string;
+    document_label?: string;
     original_name: string;
     size: number;
     created_at: string;
+    uploaded_at?: string;
   }>;
   payments?: Array<{
     id: number;

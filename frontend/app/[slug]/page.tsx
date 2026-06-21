@@ -4,16 +4,19 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ContactSection } from "@/components/ContactSection";
 import { CTASection } from "@/components/CTASection";
+import { FAQAccordion } from "@/components/FAQAccordion";
 import { PricingCards } from "@/components/PricingCards";
 import { QuickLeadForm } from "@/components/QuickLeadForm";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
+import { SectionHeader } from "@/components/SectionHeader";
+import { ServiceCard } from "@/components/ServiceCard";
 import { ServicePageTemplate } from "@/components/ServicePageTemplate";
 import { TrustBadges } from "@/components/TrustBadges";
-import { getServiceBySlug, services } from "@/data/services";
+import { getRelatedServices, getServiceBySlug, services } from "@/data/services";
 import { siteConfig } from "@/data/site.config";
-import { getPricingContent, getServiceContent } from "@/lib/content";
+import { getLocalPageContent, getPricingContent, getServiceContent, serviceFromCmsContent, type LocalPageContent } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
-import { getBreadcrumbSchema } from "@/lib/schema";
+import { getBreadcrumbSchema, getFAQSchema } from "@/lib/schema";
 
 const staticPages = {
   pricing: {
@@ -51,6 +54,8 @@ const staticPages = {
 type StaticSlug = keyof typeof staticPages;
 type PageProps = { params: Promise<{ slug: string }> };
 
+export const revalidate = 300;
+
 export function generateStaticParams() {
   return [
     ...services.map((service) => ({ slug: service.slug })),
@@ -67,6 +72,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: override?.seoTitle || service.metaTitle,
       description: override?.seoDescription || service.metaDescription,
       path: `/${slug}`
+    });
+  }
+  const remoteService = await getServiceContent(slug);
+  if (remoteService) {
+    const serviceFromCms = serviceFromCmsContent(remoteService);
+    return buildMetadata({
+      title: serviceFromCms.metaTitle,
+      description: serviceFromCms.metaDescription,
+      path: `/${slug}`
+    });
+  }
+  const localPage = await getLocalPageContent(slug);
+  if (localPage) {
+    return buildMetadata({
+      title: localPage.metaTitle || localPage.title,
+      description: localPage.metaDescription || "Simple local tax, GST and business paperwork support.",
+      path: `/${slug}`,
+      image: localPage.imagePath || siteConfig.images.ogDefault
     });
   }
   const page = staticPages[slug as StaticSlug];
@@ -86,6 +109,10 @@ export default async function DynamicPage({ params }: PageProps) {
           ...service,
           heroTitle: override?.title || service.heroTitle,
           heroText: override?.subtitle || service.heroText,
+          whoFor: override?.sections?.whoFor || override?.sections?.who || service.whoFor,
+          whatWeDo: override?.sections?.whatWeDo || service.whatWeDo,
+          documents: override?.sections?.documents || service.documents,
+          process: override?.sections?.process || service.process,
           priceNote: override?.pricingText || service.priceNote,
           faqs: override?.faqs?.length ? override.faqs : service.faqs,
           metaTitle: override?.seoTitle || service.metaTitle,
@@ -95,12 +122,20 @@ export default async function DynamicPage({ params }: PageProps) {
     );
   }
 
+  const remoteService = await getServiceContent(slug);
+  if (remoteService) {
+    return <ServicePageTemplate heroImage={remoteService.heroImage} service={serviceFromCmsContent(remoteService)} />;
+  }
+
   if (slug === "pricing") return <PricingPage />;
   if (slug === "contact") return <ContactPage />;
   if (slug === "about") return <AboutPage />;
   if (slug === "privacy-policy" || slug === "terms-and-conditions" || slug === "refund-policy") {
     return <LegalPage slug={slug} />;
   }
+
+  const localPage = await getLocalPageContent(slug);
+  if (localPage) return <LocalCmsPage page={localPage} />;
 
   notFound();
 }
@@ -159,6 +194,61 @@ function AboutPage() {
         </div>
         <Image src={siteConfig.images.gstConsultation} alt="VB Consultants business support consultation" width={900} height={700} className="aspect-[4/3] h-auto w-full rounded-3xl object-cover object-center shadow-premium" />
       </section>
+      <CTASection className="pb-16" />
+    </>
+  );
+}
+
+function LocalCmsPage({ page }: { page: LocalPageContent }) {
+  const related = getRelatedServices(page.relatedServices || []);
+  const faqs = page.faqs || [];
+  return (
+    <>
+      <SEOJsonLd
+        data={[
+          ...(faqs.length ? [getFAQSchema(faqs)] : []),
+          getBreadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: page.title, path: `/${page.slug}` }
+          ])
+        ]}
+      />
+      <Breadcrumbs items={[{ name: page.title, href: `/${page.slug}` }]} />
+      <section className="container-shell grid gap-10 pb-16 pt-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">{page.city || "Local"} support</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{page.heroTitle || page.title}</h1>
+          <div
+            className="prose prose-charcoal mt-6 max-w-none text-base leading-8 text-charcoal-700"
+            dangerouslySetInnerHTML={{ __html: page.bodyContent || "<p>Start with your phone number and our team will guide the next step.</p>" }}
+          />
+        </div>
+        <Image
+          src={page.imagePath || siteConfig.images.gstConsultation}
+          alt={`${page.title} support`}
+          width={900}
+          height={700}
+          className="aspect-[4/3] h-auto w-full rounded-3xl object-cover object-center shadow-premium"
+        />
+      </section>
+      {faqs.length ? (
+        <section className="container-shell pb-16">
+          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <SectionHeader eyebrow="FAQ" title="Simple local answers" />
+            <FAQAccordion faqs={faqs} />
+          </div>
+        </section>
+      ) : null}
+      {related.length ? (
+        <section className="bg-white/70 py-16">
+          <div className="container-shell">
+            <SectionHeader eyebrow="Related services" title="Common next steps" />
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {related.slice(0, 3).map((item) => <ServiceCard key={item.slug} service={item} />)}
+            </div>
+          </div>
+        </section>
+      ) : null}
       <CTASection className="pb-16" />
     </>
   );

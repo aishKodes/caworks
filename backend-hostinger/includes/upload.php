@@ -16,7 +16,8 @@ function save_uploaded_file(array $file, string $prefix = 'doc'): array {
     if (!isset($allowed[$mime])) {
         throw new RuntimeException('File type is not allowed.');
     }
-    if ((int) $file['size'] > 8 * 1024 * 1024) {
+    $maxSize = (int) (app_config()['max_upload_size'] ?? (8 * 1024 * 1024));
+    if ((int) $file['size'] > $maxSize) {
         throw new RuntimeException('File is too large.');
     }
     $stored = $prefix . '_' . bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
@@ -53,8 +54,15 @@ function save_media_file(array $file, string $prefix = 'media'): array {
     if (!isset($allowed[$mime])) {
         throw new RuntimeException('Only image files are allowed for media library.');
     }
-    if ((int) $file['size'] > 4 * 1024 * 1024) {
+    $maxSize = (int) (app_config()['max_media_size'] ?? (4 * 1024 * 1024));
+    if ((int) $file['size'] > $maxSize) {
         throw new RuntimeException('Media file is too large.');
+    }
+    if ($mime === 'image/svg+xml') {
+        $svg = file_get_contents($tmp) ?: '';
+        if (preg_match('/<\s*(script|iframe|object|embed|foreignObject)\b/i', $svg) || preg_match('/on[a-z]+\s*=/i', $svg) || stripos($svg, 'javascript:') !== false) {
+            throw new RuntimeException('SVG contains unsafe content.');
+        }
     }
     $stored = $prefix . '_' . bin2hex(random_bytes(12)) . '.' . $allowed[$mime];
     $config = app_config();

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const imageDir = join(process.cwd(), "public", "images");
@@ -138,29 +138,10 @@ for (const [file, title, subtitle, accent, bg, format] of generatedRasters) {
   writeRaster(file, title, subtitle, accent, bg, format);
 }
 
-writeFileSync(
-  join(imageDir, "vbc-logo.svg"),
-  `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120" role="img" aria-label="VB Consultants">
-  <rect width="420" height="120" rx="28" fill="#111111"/>
-  <rect x="16" y="16" width="88" height="88" rx="24" fill="#ffffff"/>
-  <path d="M38 38h14l12 34 12-34h14L70 84H58L38 38z" fill="#a41624"/>
-  <text x="124" y="57" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#ffffff">VB Consultants</text>
-  <text x="124" y="84" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" fill="#ffffff" opacity=".72">Tax, GST and paperwork help</text>
-</svg>`,
-  "utf8"
-);
-
-writeFileSync(
-  join(process.cwd(), "public", "favicon.svg"),
-  `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="VB Consultants">
-  <rect width="64" height="64" rx="18" fill="#111111"/>
-  <path d="M17 18h9l7 23 7-23h9L37 47H29L17 18z" fill="#ffffff"/>
-  <circle cx="47" cy="17" r="5" fill="#a41624"/>
-</svg>`,
-  "utf8"
-);
+const selectedMark = join(imageDir, "vbc", "logomain.png");
+const selectedHorizontal = join(imageDir, "vbc", "vb-consultants-logo-wide.png");
+if (existsSync(selectedMark)) copyFileSync(selectedMark, join(imageDir, "vbc", "logo-mark.png"));
+if (existsSync(selectedHorizontal)) copyFileSync(selectedHorizontal, join(imageDir, "vbc", "logo-horizontal.png"));
 
 const badges = [
   ["trust-secure.svg", "Secure", "S", "#111111"],

@@ -5,6 +5,8 @@ import { buildMetadata } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ requestId: string }> };
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Payment",
   description: "Choose Razorpay online payment or manual payment screenshot.",

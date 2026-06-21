@@ -3,6 +3,7 @@ import Image from "next/image";
 import { siteConfig } from "@/data/site.config";
 import { services } from "@/data/services";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { getSiteSettingsContent } from "@/lib/content";
 
 const resourceLinks = [
   { href: "/blog", label: "Guides" },
@@ -41,7 +42,8 @@ const footerServices = footerServiceSlugs
   .map((slug) => services.find((service) => service.slug === slug))
   .filter((service): service is NonNullable<typeof service> => Boolean(service));
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getSiteSettingsContent();
   return (
     <footer className="border-t border-charcoal-900/10 bg-charcoal-900 pb-20 text-white md:pb-0">
       <div className="container-shell py-14">
@@ -49,7 +51,7 @@ export function Footer() {
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
               <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-white">
-                <Image src={siteConfig.images.logoMark} alt="" fill sizes="44px" className="object-contain p-1.5" />
+                <Image src={siteConfig.images.logoMark} alt="" fill sizes="44px" className="object-contain" />
               </span>
               <span>
                 <span className="block text-lg font-semibold tracking-tight">{siteConfig.name}</span>
@@ -57,11 +59,11 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-5 max-w-md text-sm leading-7 text-white/70">
-              Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance, built for clear mobile steps.
+              {settings.footer_text}
             </p>
             <div className="mt-6 space-y-2 text-sm text-white/70">
-              <p>{siteConfig.address}</p>
-              <p>{siteConfig.phone} · {siteConfig.email}</p>
+              <p>{settings.address}</p>
+              <p>{settings.phone} · {settings.support_email}</p>
               <p className="text-xs text-white/45">Registered business name: {siteConfig.registeredBusinessName}</p>
             </div>
             <div className="mt-6">

@@ -1,6 +1,16 @@
 Options -Indexes
 ServerSignature Off
 
+<FilesMatch "^(config\.php|config\.example\.php|install\.sql|README\.md)$">
+  Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|log|bak|env|ini|lock|jsonl)$">
+  Require all denied
+</FilesMatch>
+
+RedirectMatch 403 ^/(includes|scripts|migrations|logs)(/|$)
+
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"

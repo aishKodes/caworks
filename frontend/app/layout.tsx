@@ -4,8 +4,11 @@ import { Header } from "@/components/Header";
 import { MobileBottomCTA } from "@/components/MobileBottomCTA";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { siteConfig } from "@/data/site.config";
+import { getMenuServices } from "@/lib/content";
 import { getOrganizationSchema, getProfessionalServiceSchema, getWebSiteSchema } from "@/lib/schema";
 import "./globals.css";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.siteUrl),
@@ -44,12 +47,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const menuServices = await getMenuServices();
   return (
     <html lang="en-IN">
       <body>
         <SEOJsonLd data={[getOrganizationSchema(), getProfessionalServiceSchema(), getWebSiteSchema()]} />
-        <Header />
+        <Header menuServices={menuServices} />
         <main className="pb-20 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomCTA />

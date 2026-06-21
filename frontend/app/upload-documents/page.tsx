@@ -7,10 +7,13 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Upload Documents",
   description: "Upload tax, GST and business paperwork documents securely.",
-  path: "/upload-documents"
+  path: "/upload-documents",
+  noIndex: true
 });
 
 export default function UploadDocumentsPage() {

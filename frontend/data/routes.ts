@@ -3,10 +3,6 @@ import { services } from "@/data/services";
 
 export const staticRoutes = [
   "/",
-  "/start",
-  "/quick-contact",
-  "/upload-documents",
-  "/track-status",
   "/pricing",
   "/contact",
   "/about",

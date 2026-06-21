@@ -1,17 +1,21 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
-require_admin_page();
+require_permission('manage_seo');
 $message = '';
 $editId = (int) ($_GET['id'] ?? 0);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_post_csrf();
     $id = (int) ($_POST['id'] ?? 0);
     if ($id > 0) {
-        $stmt = db()->prepare('UPDATE local_seo_pages SET city=?, slug=?, title=?, body_content=?, meta_title=?, meta_description=?, image_path=?, active=?, updated_at=NOW() WHERE id=?');
-        $stmt->execute([$_POST['city'] ?? '', $_POST['slug'] ?? '', $_POST['title'] ?? '', $_POST['body_content'] ?? '', $_POST['meta_title'] ?? '', $_POST['meta_description'] ?? '', $_POST['image_path'] ?? '', isset($_POST['active']) ? 1 : 0, $id]);
+        $stmt = db()->prepare('UPDATE local_seo_pages SET city=?, state=?, slug=?, title=?, hero_title=?, body_content=?, related_services_json=?, faqs_json=?, meta_title=?, meta_description=?, image_path=?, active=?, updated_at=NOW() WHERE id=?');
+        $stmt->execute([$_POST['city'] ?? '', $_POST['state'] ?? '', $_POST['slug'] ?? '', $_POST['title'] ?? '', $_POST['hero_title'] ?? '', $_POST['body_content'] ?? '', $_POST['related_services_json'] ?? '[]', $_POST['faqs_json'] ?? '[]', $_POST['meta_title'] ?? '', $_POST['meta_description'] ?? '', $_POST['image_path'] ?? '', isset($_POST['active']) ? 1 : 0, $id]);
     } else {
-        $stmt = db()->prepare('INSERT INTO local_seo_pages (city,slug,title,body_content,meta_title,meta_description,image_path,active) VALUES (?,?,?,?,?,?,?,?)');
-        $stmt->execute([$_POST['city'] ?? '', $_POST['slug'] ?? '', $_POST['title'] ?? '', $_POST['body_content'] ?? '', $_POST['meta_title'] ?? '', $_POST['meta_description'] ?? '', $_POST['image_path'] ?? '', isset($_POST['active']) ? 1 : 0]);
+        $stmt = db()->prepare('INSERT INTO local_seo_pages (city,state,slug,title,hero_title,body_content,related_services_json,faqs_json,meta_title,meta_description,image_path,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+        $stmt->execute([$_POST['city'] ?? '', $_POST['state'] ?? '', $_POST['slug'] ?? '', $_POST['title'] ?? '', $_POST['hero_title'] ?? '', $_POST['body_content'] ?? '', $_POST['related_services_json'] ?? '[]', $_POST['faqs_json'] ?? '[]', $_POST['meta_title'] ?? '', $_POST['meta_description'] ?? '', $_POST['image_path'] ?? '', isset($_POST['active']) ? 1 : 0]);
     }
+    audit_log((int) current_admin()['id'], null, 'local_seo_saved', 'Local SEO page saved: ' . ($_POST['slug'] ?? ''));
+    $savedSlug = trim((string) ($_POST['slug'] ?? ''));
+    cms_revalidate_paths(array_filter([$savedSlug ? '/' . $savedSlug : '', '/sitemap.xml']));
     $message = 'Local SEO page saved.';
 }
 $edit = [];
@@ -26,12 +30,17 @@ if ($message) echo '<div class="notice">' . e($message) . '</div>';
 ?>
 <div class="grid two">
   <form method="post" class="card">
+    <?= csrf_field() ?>
     <h2><?= $edit ? 'Edit local page' : 'Add local page' ?></h2>
     <input type="hidden" name="id" value="<?= e($edit['id'] ?? '') ?>">
     <label class="field"><span>City</span><input name="city" required value="<?= e($edit['city'] ?? '') ?>"></label>
+    <label class="field"><span>State</span><input name="state" value="<?= e($edit['state'] ?? 'Odisha') ?>"></label>
     <label class="field"><span>Slug</span><input name="slug" required value="<?= e($edit['slug'] ?? '') ?>"></label>
     <label class="field"><span>Title</span><input name="title" required value="<?= e($edit['title'] ?? '') ?>"></label>
+    <label class="field"><span>Hero title</span><input name="hero_title" value="<?= e($edit['hero_title'] ?? '') ?>"></label>
     <label class="field"><span>Body content</span><textarea name="body_content" style="min-height:220px"><?= e($edit['body_content'] ?? '') ?></textarea></label>
+    <label class="field"><span>Related services JSON</span><textarea name="related_services_json"><?= e($edit['related_services_json'] ?? '[]') ?></textarea></label>
+    <label class="field"><span>FAQ JSON</span><textarea name="faqs_json"><?= e($edit['faqs_json'] ?? '[]') ?></textarea></label>
     <label class="field"><span>Meta title</span><input name="meta_title" value="<?= e($edit['meta_title'] ?? '') ?>"></label>
     <label class="field"><span>Meta description</span><textarea name="meta_description"><?= e($edit['meta_description'] ?? '') ?></textarea></label>
     <label class="field"><span>Image path/URL</span><input name="image_path" value="<?= e($edit['image_path'] ?? '') ?>"></label>

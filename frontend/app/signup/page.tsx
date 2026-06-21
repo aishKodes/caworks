@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { SignupForm } from "@/components/SignupForm";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Signup",
   description: "Create an account to upload documents, pay and track requests.",

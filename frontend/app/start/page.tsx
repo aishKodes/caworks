@@ -4,10 +4,13 @@ import { ServiceRequestForm } from "@/components/ServiceRequestForm";
 import { SignupForm } from "@/components/SignupForm";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = buildMetadata({
   title: "Start ITR Filing",
   description: "Choose service type, create an account and continue to document upload.",
-  path: "/start"
+  path: "/start",
+  noIndex: true
 });
 
 export default function StartPage() {
