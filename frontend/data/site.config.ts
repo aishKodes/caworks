@@ -9,17 +9,17 @@ export const siteConfig = {
   registeredBusinessName,
   legalName: registeredBusinessName,
   tagline: "Tax, Compliance & Business Support",
-  defaultTitle: "VB Consultants | Online Tax, GST and Business Paperwork Help",
+  defaultTitle: "VB Consultants | Tax, GST, Insurance Claim and Business Support",
   description:
-    "VB Consultants offers simple online ITR filing, GST, tax notice, loan project report and business compliance support for Indian individuals and small businesses.",
+    "VB Consultants offers practical online support for ITR filing, GST, insurance claim problems, loan project reports and business paperwork in India.",
   siteUrl,
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.vbcbharat.com",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919000000000",
   razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
   email: "consult@vbcbharat.com",
-  phone: "+91 90000 00000",
+  phone: process.env.NEXT_PUBLIC_PUBLIC_PHONE || "+91 73278 54329",
   upiId: "vbc@upi",
-  address: "Office address placeholder, Bhubaneswar, Odisha 751001",
+  address: (process.env.NEXT_PUBLIC_OFFICE_ADDRESS || "Bhubaneswar, Odisha").trim(),
   city: "Bhubaneswar",
   region: "Odisha",
   country: "IN",
@@ -27,12 +27,13 @@ export const siteConfig = {
 } as const;
 
 export const whatsappMessages = {
-  homepage: "Hello VB Consultants, I need help with tax, GST or business paperwork. Please contact me.",
+  homepage: "Hello VB Consultants, I need help with tax, GST, an insurance claim or business paperwork. Please contact me.",
   salaryItr: "Hello VB Consultants, I want help with Salary ITR filing.",
   documentUpload: "Hello VB Consultants, I want to send documents for my request.",
   gst: "Hello VB Consultants, I need help with GST filing or registration.",
   notice: "Hello VB Consultants, I need help with a tax notice.",
   loan: "Hello VB Consultants, I need help with loan/project report or subsidy paperwork.",
+  insurance: "Hello VB Consultants, I need help with a rejected, delayed or underpaid insurance claim.",
   support: "Hello VB Consultants, I need support with my request."
 } as const;
 

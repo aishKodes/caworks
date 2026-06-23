@@ -26,7 +26,7 @@ export async function fetchCms<T>(path: string, options: CmsFetchOptions = {}): 
   if (!base) return null;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 2500);
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 900);
   const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
     signal: controller.signal,
     headers: {

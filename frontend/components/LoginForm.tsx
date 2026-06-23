@@ -16,6 +16,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const passwordHelpUrl = getWhatsAppUrl(`${whatsappMessages.support} I need help resetting my password.`);
   const selectedService = searchParams.get("service") || "";
   const selectedServiceLabel = serviceOptions.find((option) => option.value === selectedService)?.label;
@@ -46,7 +47,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="rounded-3xl border border-charcoal-900/10 bg-white p-5 shadow-soft md:p-7">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Login</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-charcoal-900">Login to continue your request.</h1>
-      <p className="mt-3 text-sm leading-6 text-muted">Use phone, email or Tax Help ID with your password.</p>
+      <p className="mt-3 text-base leading-7 text-charcoal-700">Use phone, email or Tax Help ID with your password or PIN.</p>
       {selectedServiceLabel ? (
         <div className="mt-4 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
           You selected: {selectedServiceLabel}. Login and we will continue from here.
@@ -59,8 +60,13 @@ export function LoginForm() {
           <input name="identifier" className={inputClass} required autoComplete="username" />
         </label>
         <label className="text-sm font-semibold text-charcoal-900">
-          Password
-          <input name="password" className={inputClass} required type="password" autoComplete="current-password" />
+          Password or PIN
+          <span className="relative block">
+            <input name="password" className={`${inputClass} pr-20`} required type={showPassword ? "text" : "password"} autoComplete="current-password" />
+            <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 rounded-full px-3 py-2 text-xs font-semibold text-brand-700">
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </span>
         </label>
       </div>
 

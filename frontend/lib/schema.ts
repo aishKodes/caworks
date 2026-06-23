@@ -24,7 +24,7 @@ export function getOrganizationSchema() {
 }
 
 export function getProfessionalServiceSchema() {
-  return {
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
     name: siteConfig.name,
@@ -34,15 +34,18 @@ export function getProfessionalServiceSchema() {
     telephone: siteConfig.phone,
     email: siteConfig.email,
     priceRange: "₹₹",
-    areaServed: ["India", "Odisha", "Bhubaneswar"],
-    address: {
+    areaServed: ["India", "Odisha", "Bhubaneswar"]
+  };
+  if (siteConfig.address) {
+    schema.address = {
       "@type": "PostalAddress",
       streetAddress: siteConfig.address,
       addressLocality: siteConfig.city,
       addressRegion: siteConfig.region,
       addressCountry: siteConfig.country
-    }
-  };
+    };
+  }
+  return schema;
 }
 
 export function getWebSiteSchema() {

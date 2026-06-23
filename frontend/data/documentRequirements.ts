@@ -11,6 +11,23 @@ export type DocumentRequirement = {
 };
 
 export const documentServiceOptions = [
+  { value: "insurance-claim-support", label: "Insurance Claim Support" },
+  { value: "insurance-claim-documentation-support", label: "Insurance Claim Documentation" },
+  { value: "insurance-claim-rejected", label: "Insurance Claim Rejected" },
+  { value: "health-insurance-claim-help", label: "Health Insurance Claim" },
+  { value: "life-insurance-claim-assistance", label: "Life Insurance Claim Assistance" },
+  { value: "motor-insurance-claim-support", label: "Motor Insurance Claim Support" },
+  { value: "personal-accident-insurance-claim", label: "Personal Accident Claim" },
+  { value: "claim-form-preparation-support", label: "Claim Form Preparation" },
+  { value: "insurance-claim-follow-up", label: "Insurance Claim Follow-up" },
+  { value: "settlement-documentation-assistance", label: "Settlement Documentation" },
+  { value: "nominee-claim-assistance", label: "Nominee Claim Assistance" },
+  { value: "mediclaim-reimbursement-help", label: "Mediclaim Reimbursement" },
+  { value: "cashless-claim-denied", label: "Cashless Claim Denied" },
+  { value: "life-insurance-claim-dispute", label: "Life Insurance Claim Dispute" },
+  { value: "motor-insurance-claim-dispute", label: "Motor Insurance Claim Dispute" },
+  { value: "property-insurance-claim-help", label: "Property / Business Insurance Claim" },
+  { value: "insurance-legal-escalation-support", label: "Insurance Legal Escalation" },
   { value: "salary-itr-filing", label: "Salary ITR / Form 16" },
   { value: "itr-1-filing", label: "ITR-1 Filing" },
   { value: "itr-2-capital-gains-filing", label: "ITR-2 / Capital Gains" },
@@ -50,7 +67,21 @@ const salaryRequirements = [
   req("salary-itr-filing", "other_documents", "Other documents", "Upload any other relevant records.", false, true, 99)
 ];
 
+const insuranceRequirements = [
+  req("insurance-claim-support", "policy_copy", "Policy Copy", "Upload the policy schedule and wording available with you.", true, true, 1),
+  req("insurance-claim-support", "claim_form", "Claim Form", "Upload the submitted or partly completed claim form and acknowledgement if available.", false, true, 2),
+  req("insurance-claim-support", "rejection_status_letter", "Claim Rejection / Status Letter", "Upload the rejection letter, query, settlement note or latest claim status.", false, true, 3),
+  req("insurance-claim-support", "insurer_communication", "Insurance Company Communication", "Upload relevant email, SMS, WhatsApp screenshots or letters.", false, true, 4),
+  req("insurance-claim-support", "medical_records", "Bills / Reports / Discharge Summary", "For health claims, upload bills, discharge summary, reports and prescriptions.", false, true, 5),
+  req("insurance-claim-support", "motor_records", "FIR / Repair Estimate / Survey Report", "For motor claims, upload the FIR if applicable, repair estimate, survey report and vehicle papers.", false, true, 6),
+  req("insurance-claim-support", "id_proof", "ID Proof", "Upload the claimant or nominee identity proof if available.", false, true, 7),
+  req("insurance-claim-support", "nominee_documents", "Nominee Documents", "Upload nominee identity, relationship and other insurer-requested papers if applicable.", false, true, 8),
+  req("insurance-claim-support", "settlement_documents", "Settlement Documents", "Upload settlement notes, discharge forms, deduction details or bank proof if applicable.", false, true, 9),
+  req("insurance-claim-support", "other_documents", "Other Supporting Documents", "Upload any other document that explains the claim issue.", false, true, 99)
+];
+
 const requirements: Record<string, DocumentRequirement[]> = {
+  "insurance-claim-support": insuranceRequirements,
   "salary-itr-filing": salaryRequirements,
   "itr-1-filing": salaryRequirements.map((item) => ({ ...item, serviceSlug: "itr-1-filing" })),
   "itr-2-capital-gains-filing": [
@@ -143,6 +174,27 @@ requirements["business-loan-paperwork"] = requirements["loan-project-report"].ma
   ...item,
   serviceSlug: "business-loan-paperwork"
 }));
+
+for (const serviceSlug of [
+  "insurance-claim-rejected",
+  "insurance-claim-documentation-support",
+  "health-insurance-claim-help",
+  "life-insurance-claim-assistance",
+  "motor-insurance-claim-support",
+  "personal-accident-insurance-claim",
+  "claim-form-preparation-support",
+  "insurance-claim-follow-up",
+  "settlement-documentation-assistance",
+  "nominee-claim-assistance",
+  "mediclaim-reimbursement-help",
+  "cashless-claim-denied",
+  "life-insurance-claim-dispute",
+  "motor-insurance-claim-dispute",
+  "property-insurance-claim-help",
+  "insurance-legal-escalation-support"
+]) {
+  requirements[serviceSlug] = insuranceRequirements.map((item) => ({ ...item, serviceSlug }));
+}
 
 export function getFallbackDocumentRequirements(serviceSlug: string): DocumentRequirement[] {
   return [...(requirements[serviceSlug] || requirements["not-sure"])].sort((a, b) => a.sortOrder - b.sortOrder);

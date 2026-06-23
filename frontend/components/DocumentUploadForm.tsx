@@ -31,10 +31,14 @@ function checklistTypeToService(checklistType?: "salary" | "gst" | "loan") {
 
 export function DocumentUploadForm({
   requestId,
+  requestCode,
+  uploadToken,
   checklistType = "salary",
   initialServiceSlug
 }: {
   requestId?: string;
+  requestCode?: string;
+  uploadToken?: string;
   checklistType?: "salary" | "gst" | "loan";
   initialServiceSlug?: string;
 }) {
@@ -88,20 +92,14 @@ export function DocumentUploadForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const returnTo = `/upload-documents?service=${encodeURIComponent(serviceSlug)}${requestId ? `&requestId=${encodeURIComponent(requestId)}` : ""}`;
-    const isLoggedIn = await requireAuthForIntent(router, "upload_documents", returnTo, serviceSlug, requestId);
-    if (!isLoggedIn) return;
-
-    const missing = requirements.filter((requirement) => requirement.required && !(filesByKey[requirement.documentKey] || []).length);
+    if (!requestCode || !uploadToken) {
+      const isLoggedIn = await requireAuthForIntent(router, "upload_documents", returnTo, serviceSlug, requestId);
+      if (!isLoggedIn) return;
+    }
 
     if (serviceSlug === "not-sure" && details.trim().length < 8) {
       setStatus("error");
       setMessage("Please add a short message so we understand what help you need.");
-      return;
-    }
-
-    if (missing.length) {
-      setStatus("error");
-      setMessage(`Please upload: ${missing.map((item) => item.title).join(", ")}.`);
       return;
     }
 
@@ -113,6 +111,8 @@ export function DocumentUploadForm({
 
     const formData = new FormData();
     formData.append("request_id", requestId || "");
+    formData.append("request_code", requestCode || "");
+    formData.append("upload_token", uploadToken || "");
     formData.append("service_slug", serviceSlug);
     formData.append("service_label", selectedServiceLabel);
     formData.append("message", details.trim());
@@ -137,6 +137,11 @@ export function DocumentUploadForm({
       setMessage(result.message || "Documents uploaded. We will check and update your request.");
     } else {
       if (result.status === 401) {
+        if (requestCode && uploadToken) {
+          setStatus("error");
+          setMessage("This secure upload link is invalid or expired. Please start a new request or contact us on WhatsApp.");
+          return;
+        }
         router.push(buildAuthRedirectUrl({ intent: "upload_documents", returnTo, serviceSlug, requestId }));
         return;
       }
@@ -148,9 +153,9 @@ export function DocumentUploadForm({
   return (
     <form onSubmit={handleSubmit} className="rounded-3xl border border-charcoal-900/10 bg-white p-5 shadow-soft md:p-7">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Document upload</p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-charcoal-900">Upload what you have.</h2>
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-charcoal-900">Upload what you have. Our team will contact you if anything else is needed.</h2>
       <p className="mt-2 text-base leading-7 text-charcoal-700">
-        If anything is missing, our team will contact you. Allowed files: PDF, JPG, JPEG, PNG and WEBP. Maximum suggested size: 8 MB per file.
+        Allowed files: PDF, JPG, JPEG, PNG and WEBP. Maximum suggested size: 8 MB per file.
       </p>
 
       <label className="mt-6 block text-sm font-semibold text-charcoal-900">

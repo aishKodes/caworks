@@ -14,25 +14,25 @@ import { ServicePageTemplate } from "@/components/ServicePageTemplate";
 import { TrustBadges } from "@/components/TrustBadges";
 import { getRelatedServices, getServiceBySlug, services } from "@/data/services";
 import { siteConfig } from "@/data/site.config";
-import { getLocalPageContent, getPricingContent, getServiceContent, serviceFromCmsContent, type LocalPageContent } from "@/lib/content";
+import { getLocalPageContent, getPricingContent, getServiceContent, getServicePricingNote, serviceFromCmsContent, type LocalPageContent } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import { getBreadcrumbSchema, getFAQSchema } from "@/lib/schema";
 
 const staticPages = {
   pricing: {
     title: "Pricing",
-    metaTitle: "Pricing for Tax, GST and Business Paperwork Help",
-    description: "Starting prices for salary ITR, ITR-1, GST filing, tax notice help, loan project report and business paperwork support."
+    metaTitle: "Pricing for Tax, GST, Insurance Claim and Business Support",
+    description: "Starting prices and custom fee guidance for ITR, GST, insurance claim, loan and business paperwork support."
   },
   contact: {
     title: "Contact",
     metaTitle: "Contact VB Consultants",
-    description: "Contact support for ITR filing, GST, tax notice, loan paperwork and business compliance requests."
+    description: "Contact support for ITR, GST, insurance claim, loan paperwork and business compliance requests."
   },
   about: {
     title: "About",
     metaTitle: "About VB Consultants",
-    description: "Learn about this online tax, GST, loan and business paperwork help platform."
+    description: "Learn about this online tax, GST, insurance claim, loan and business paperwork support platform."
   },
   "privacy-policy": {
     title: "Privacy Policy",
@@ -101,7 +101,7 @@ export default async function DynamicPage({ params }: PageProps) {
   const { slug } = await params;
   const service = getServiceBySlug(slug);
   if (service) {
-    const override = await getServiceContent(slug);
+    const [override, pricingNote] = await Promise.all([getServiceContent(slug), getServicePricingNote(slug)]);
     return (
       <ServicePageTemplate
         heroImage={override?.heroImage}
@@ -113,7 +113,7 @@ export default async function DynamicPage({ params }: PageProps) {
           whatWeDo: override?.sections?.whatWeDo || service.whatWeDo,
           documents: override?.sections?.documents || service.documents,
           process: override?.sections?.process || service.process,
-          priceNote: override?.pricingText || service.priceNote,
+          priceNote: pricingNote || override?.pricingText || service.priceNote,
           faqs: override?.faqs?.length ? override.faqs : service.faqs,
           metaTitle: override?.seoTitle || service.metaTitle,
           metaDescription: override?.seoDescription || service.metaDescription
@@ -124,7 +124,9 @@ export default async function DynamicPage({ params }: PageProps) {
 
   const remoteService = await getServiceContent(slug);
   if (remoteService) {
-    return <ServicePageTemplate heroImage={remoteService.heroImage} service={serviceFromCmsContent(remoteService)} />;
+    const pricingNote = await getServicePricingNote(slug);
+    const cmsService = serviceFromCmsContent(remoteService);
+    return <ServicePageTemplate heroImage={remoteService.heroImage} service={{ ...cmsService, priceNote: pricingNote || cmsService.priceNote }} />;
   }
 
   if (slug === "pricing") return <PricingPage />;
@@ -151,9 +153,6 @@ async function PricingPage() {
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Starting prices with clear confirmation.</h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">Final fee depends on documents, income type and complexity. We confirm the fee before starting work.</p>
         <div className="mt-9"><PricingCards plans={pricingContent} /></div>
-        <div className="mt-10 rounded-2xl bg-brand-50 p-5 text-sm leading-7 text-brand-900">
-          We do not make false refund promises. Tax, refund or payable amount depends on official records and eligibility.
-        </div>
       </section>
       <CTASection className="pb-16" />
     </>
@@ -188,8 +187,8 @@ function AboutPage() {
       <section className="container-shell grid gap-10 pb-16 pt-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">About</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">A mobile help desk for tax and business paperwork.</h1>
-          <p className="mt-5 text-lg leading-8 text-muted">The platform helps Indian salaried people, families, freelancers and small businesses upload documents, pay securely and track paperwork requests from a phone.</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">A practical help desk for tax, claims and business paperwork.</h1>
+          <p className="mt-5 text-lg leading-8 text-muted">The platform helps Indian families, salaried people and small businesses move ITR, GST, insurance claim, loan and compliance requests forward from a phone.</p>
           <div className="mt-8"><TrustBadges /></div>
         </div>
         <Image src={siteConfig.images.gstConsultation} alt="VB Consultants business support consultation" width={900} height={700} className="aspect-[4/3] h-auto w-full rounded-3xl object-cover object-center shadow-premium" />

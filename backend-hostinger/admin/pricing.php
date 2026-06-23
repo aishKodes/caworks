@@ -14,7 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$_POST['service_name'] ?? '', $_POST['amount_text'] ?? '', $_POST['starting_price'] !== '' ? (float) $_POST['starting_price'] : null, $_POST['billing_type'] ?? '', $_POST['note'] ?? '', $_POST['features_json'] ?? '[]', (int)($_POST['visible_order'] ?? 0), isset($_POST['active']) ? 1 : 0, isset($_POST['show_on_homepage']) ? 1 : 0, $_POST['cta_link'] ?? '']);
     }
     audit_log((int) current_admin()['id'], null, 'pricing_saved', 'Pricing item saved: ' . ($_POST['service_name'] ?? ''));
-    cms_revalidate_paths(['/pricing', '/', '/sitemap.xml']);
+    cms_revalidate_paths([
+        '/pricing', '/', '/salary-itr-filing', '/itr-1-filing', '/itr-2-capital-gains-filing',
+        '/freelancer-business-itr', '/gst-services', '/gst-registration', '/gst-return-filing',
+        '/bookkeeping', '/tds-return-filing', '/payroll-compliance', '/tax-notice-help',
+        '/business-registration', '/msme-udyam-registration', '/loan-project-report',
+        '/subsidy-scheme-guidance', '/sitemap.xml'
+    ]);
     $message = 'Pricing saved.';
     $editId = $id;
 }

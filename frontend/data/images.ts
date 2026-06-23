@@ -20,6 +20,7 @@ export const imageConfig = {
   mobileUpload: "/images/vbc/mobile-document-upload-india.png",
   paymentTracking: "/images/vbc/secure-payment-status-tracking.png",
   taxNotice: "/images/vbc/tax-notice-help-consultation.png",
+  insuranceClaim: "/images/vbc/tax-notice-help-consultation.png",
   loanProject: "/images/vbc/loan-project-report-business-support.png",
   taxHelp: "/images/tax-help-placeholder.jpg",
   documentUpload: "/images/vbc/mobile-document-upload-india.png",

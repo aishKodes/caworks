@@ -20,6 +20,14 @@ const legalLinks = [
 ];
 
 const footerServiceSlugs = [
+  "insurance-claim-support",
+  "insurance-claim-documentation-support",
+  "insurance-claim-rejected",
+  "health-insurance-claim-help",
+  "life-insurance-claim-assistance",
+  "motor-insurance-claim-support",
+  "personal-accident-insurance-claim",
+  "insurance-legal-escalation-support",
   "salary-itr-filing",
   "itr-1-filing",
   "itr-2-capital-gains-filing",
@@ -62,8 +70,9 @@ export async function Footer() {
               {settings.footer_text}
             </p>
             <div className="mt-6 space-y-2 text-sm text-white/70">
-              <p>{settings.address}</p>
+              {settings.address ? <p>{settings.address}</p> : null}
               <p>{settings.phone} · {settings.support_email}</p>
+              <p>www.vbcbharat.com</p>
               <p className="text-xs text-white/45">Registered business name: {siteConfig.registeredBusinessName}</p>
             </div>
             <div className="mt-6">

@@ -37,17 +37,11 @@ Fresh reset process for VB Consultants:
 7. Create the first `super_admin`.
 8. Login at `https://api.vbcbharat.com/admin/login.php`.
 9. Open `https://api.vbcbharat.com/admin/system-check.php`.
-10. Test `https://api.vbcbharat.com/api/health`, `/api/content/pricing`, signup, `/api/me`, document upload and email test.
+10. Before admin setup, test `https://api.vbcbharat.com/api/health`, `POST /api/guest-request`, `POST /api/signup` and `GET /api/content/pricing`.
+11. After admin setup, test `/api/me`, secure document upload and the admin email test.
 
 Fresh DB reset removes old users, leads, uploaded document records, admin content and payment records unless you export them first.
-
-For an existing database, first take a backup, then import:
-
-```text
-migrations/backend_admin_cms_upgrade.sql
-```
-
-Do not import `install.sql` on an existing live database unless you intend to rebuild it.
+For this fresh deployment, import only `install.sql`. It creates the complete schema and seed content. Do not run old migrations on the new database.
 
 ## 3. Configure backend
 
@@ -60,6 +54,12 @@ cp config.example.php config.php
 Edit `config.php`:
 
 - MySQL host, database, user, password
+- `APP_URL=https://api.vbcbharat.com`
+- `FRONTEND_URL=https://www.vbcbharat.com`
+- `ALLOWED_ORIGIN=https://www.vbcbharat.com`
+- `PUBLIC_PHONE=+91 73278 54329`
+- `OFFICE_ADDRESS=Bhubaneswar, Odisha`
+- `MIN_PASSWORD_LENGTH=4`
 - SMTP host, username, password, port
 - Razorpay key id
 - Razorpay key secret
@@ -68,9 +68,12 @@ Edit `config.php`:
 - Admin email
 - Allowed frontend origin
 - UPI ID
+- `MANUAL_PAYMENT_ENABLED` and `MANUAL_UPI_ID`
 - Media base URL, for example `https://api.vbcbharat.com/media`
 - Frontend URL, for example `https://www.vbcbharat.com`
 - Optional frontend revalidation URL and secret
+- `FRONTEND_REVALIDATE_URL=https://www.vbcbharat.com/api/revalidate`
+- `FRONTEND_REVALIDATE_SECRET` matching Vercel `REVALIDATE_SECRET`
 - `app_secret`
 - `INSTALLER_SECRET`
 
@@ -80,7 +83,7 @@ Use a long random `app_secret` and a separate long random `INSTALLER_SECRET`.
 
 Preferred Hostinger-friendly browser setup:
 
-1. Import `install.sql` or run the migration.
+1. Import `install.sql`.
 2. Add `INSTALLER_SECRET` in `config.php`.
 3. Open:
 
@@ -98,7 +101,7 @@ https://api.vbcbharat.com/admin/login.php
 
 7. For security, delete `admin/setup.php` after setup or block it from File Manager.
 
-The setup page refuses to run if any admin user already exists. If `INSTALLER_SECRET` is missing, it refuses to run.
+The setup page refuses to run after a super admin exists. If `INSTALLER_SECRET` is missing, it refuses to run. Public signup, guest requests, uploads and content APIs do not depend on admin setup.
 
 CLI setup is still available if SSH works:
 
@@ -197,14 +200,26 @@ NEXT_PUBLIC_API_BASE_URL=https://api.vbcbharat.com
 NEXT_PUBLIC_SITE_URL=https://www.vbcbharat.com
 NEXT_PUBLIC_BRAND_NAME=VB Consultants
 NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
+NEXT_PUBLIC_PUBLIC_PHONE=+917327854329
+NEXT_PUBLIC_OFFICE_ADDRESS=Bhubaneswar, Odisha
+NEXT_PUBLIC_WHATSAPP_NUMBER=91XXXXXXXXXX
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
 REVALIDATE_SECRET=your_revalidate_secret
 ```
 
 In backend `config.php`, set:
 
 ```php
-'allowed_origin' => 'https://www.vbcbharat.com',
+'ALLOWED_ORIGIN' => 'https://www.vbcbharat.com',
 ```
+
+The public customer flow is guest-first:
+
+1. `POST /api/guest-request` creates or reuses a customer, creates a request and returns a secure upload URL.
+2. The raw upload token is returned only to the customer. Only its SHA-256 hash is stored.
+3. `/api/upload-documents` accepts either a logged-in customer session or a valid request code and upload token.
+4. Optional signup accepts a password or PIN with at least four characters and creates a 30-day session.
+5. SMTP, WhatsApp queue or other optional integration failures are logged and do not cancel the public request.
 
 ## 8. Admin workflow
 
@@ -305,13 +320,7 @@ Public CMS responses use 300-second cache headers for marketing/SEO content. Ver
 
 ## 10. Document checklist CMS and upload metadata
 
-The migration adds:
-
-- `documents.document_label`
-- `documents.uploaded_at`
-- `service_document_requirements`
-
-Run `migrations/backend_admin_cms_upgrade.sql` on existing databases before relying on the new upload checklist UI. Admins can edit service-specific required/optional upload slots from:
+The fresh `install.sql` creates `documents`, `uploaded_documents`, request upload-token fields and `service_document_requirements`. Admins can edit service-specific required/optional upload slots from:
 
 ```text
 https://api.vbcbharat.com/admin/service-documents.php

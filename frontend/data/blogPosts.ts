@@ -224,6 +224,96 @@ export const blogPosts: BlogPost[] = [
       }
     ],
     relatedServices: ["bookkeeping", "gst-services", "tds-return-filing"]
+  },
+  {
+    slug: "what-to-do-if-insurance-claim-is-rejected",
+    title: "What to do if your insurance claim is rejected",
+    metaTitle: "Insurance Claim Rejected? Practical Next Steps",
+    metaDescription: "A practical checklist for reviewing an insurance claim rejection letter, policy and supporting documents before escalation.",
+    excerpt: "Keep the rejection letter and policy safe, then build a clear record before sending the next reply.",
+    category: "Insurance Claims",
+    image: "/images/vbc/tax-notice-help-consultation.png",
+    readingTime: "6 min read",
+    publishedAt: "2026-06-20",
+    updatedAt: "2026-06-20",
+    tags: ["Insurance claim", "Rejected claim", "Escalation"],
+    sections: [
+      { heading: "Read the rejection reason", paragraphs: ["Note the exact policy clause, document issue or event reason mentioned by the insurer.", "Do not rely only on a phone conversation. Keep the written decision and claim reference."] },
+      { heading: "Prepare the next record", paragraphs: ["Collect the policy, claim form, evidence already submitted and all insurer communication.", "A clear chronology helps with a reply, grievance or further escalation."] }
+    ],
+    relatedServices: ["insurance-claim-rejected", "insurance-claim-support", "insurance-legal-escalation-support"]
+  },
+  {
+    slug: "documents-needed-for-health-insurance-claim-support",
+    title: "Documents needed for health insurance claim support",
+    metaTitle: "Health Insurance Claim Documents Checklist",
+    metaDescription: "Keep policy, hospital bills, discharge summary, claim form and insurer communication ready for health insurance claim support.",
+    excerpt: "A clean hospital and policy file makes it easier to answer insurer queries or challenge a claim decision.",
+    category: "Insurance Claims",
+    image: "/images/vbc/tax-notice-help-consultation.png",
+    readingTime: "5 min read",
+    publishedAt: "2026-06-21",
+    updatedAt: "2026-06-21",
+    tags: ["Health insurance", "Claim documents", "Mediclaim"],
+    sections: [
+      { heading: "Medical and payment papers", paragraphs: ["Keep the discharge summary, final bill, receipts, prescriptions, reports and pharmacy bills.", "Use clear scans or photos and retain the originals."] },
+      { heading: "Insurer records", paragraphs: ["Keep the policy schedule, claim form, query letters, rejection or settlement note and email trail.", "Upload what you have first. Missing items can be identified after review."] }
+    ],
+    relatedServices: ["health-insurance-claim-help", "mediclaim-reimbursement-help"]
+  },
+  {
+    slug: "cashless-claim-denied-documents-to-keep",
+    title: "Cashless claim denied: documents to keep ready",
+    metaTitle: "Cashless Claim Denied? Documents to Keep",
+    metaDescription: "Documents to preserve after cashless health insurance denial, including authorization messages, hospital estimates, bills and policy papers.",
+    excerpt: "Cashless denial does not remove the need to keep a complete hospital and payment record.",
+    category: "Insurance Claims",
+    image: "/images/vbc/tax-notice-help-consultation.png",
+    readingTime: "5 min read",
+    publishedAt: "2026-06-22",
+    updatedAt: "2026-06-22",
+    tags: ["Cashless claim", "Health insurance", "Reimbursement"],
+    sections: [
+      { heading: "Save the denial record", paragraphs: ["Keep the denial or authorization message, hospital estimate and stated reason.", "Ask for a written record when possible."] },
+      { heading: "Prepare for reimbursement", paragraphs: ["Preserve bills, receipts, discharge records, prescriptions and reports if you pay the hospital directly.", "These papers may be needed for a reimbursement claim and later follow-up."] }
+    ],
+    relatedServices: ["cashless-claim-denied", "mediclaim-reimbursement-help"]
+  },
+  {
+    slug: "mediclaim-reimbursement-stuck-common-reasons",
+    title: "Mediclaim reimbursement stuck: common reasons",
+    metaTitle: "Mediclaim Reimbursement Stuck? Common Reasons",
+    metaDescription: "Common reasons for delayed mediclaim reimbursement, repeated insurer queries and reduced settlement amounts.",
+    excerpt: "Missing records, unclear bills and policy questions can delay a reimbursement claim.",
+    category: "Insurance Claims",
+    image: "/images/vbc/tax-notice-help-consultation.png",
+    readingTime: "6 min read",
+    publishedAt: "2026-06-23",
+    updatedAt: "2026-06-23",
+    tags: ["Mediclaim", "Reimbursement", "Delayed claim"],
+    sections: [
+      { heading: "Repeated document queries", paragraphs: ["The insurer may ask for missing bills, medical records or clarification of treatment.", "Keep every query and response together so the sequence remains clear."] },
+      { heading: "Settlement deductions", paragraphs: ["The insurer may apply limits, exclusions or deductions under the policy.", "Compare the settlement note with the submitted bill and policy terms before replying."] }
+    ],
+    relatedServices: ["mediclaim-reimbursement-help", "health-insurance-claim-help"]
+  },
+  {
+    slug: "how-to-prepare-papers-for-insurance-escalation",
+    title: "How to prepare papers for insurance escalation",
+    metaTitle: "How to Prepare Insurance Claim Escalation Papers",
+    metaDescription: "Build a clear policy, claim, communication and chronology file before grievance or legal escalation of an insurance dispute.",
+    excerpt: "A short chronology and indexed document file make an insurance grievance easier to understand.",
+    category: "Insurance Claims",
+    image: "/images/vbc/tax-notice-help-consultation.png",
+    readingTime: "7 min read",
+    publishedAt: "2026-06-23",
+    updatedAt: "2026-06-23",
+    tags: ["Insurance escalation", "Grievance", "Claim dispute"],
+    sections: [
+      { heading: "Create a claim chronology", paragraphs: ["List the policy start, incident, claim filing, insurer queries, replies and final decision by date.", "Add the claim number and contact details on the first page."] },
+      { heading: "Index the evidence", paragraphs: ["Group the policy, claim form, evidence, bills, survey papers and insurer communication.", "A complete record supports grievance review and legal coordination where required."] }
+    ],
+    relatedServices: ["insurance-legal-escalation-support", "insurance-claim-support"]
   }
 ];
 

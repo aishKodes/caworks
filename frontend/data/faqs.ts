@@ -7,17 +7,22 @@ export const homeFaqs: FAQItem[] = [
   {
     question: "Can I start without creating an account?",
     answer:
-      "Yes. You can enter your phone number and request a call back. For document upload, payment and status tracking, you can create a simple account."
+      "Yes. Enter your name and phone number to create a request. You can upload documents with the secure link. An account is optional for dashboard tracking."
   },
   {
     question: "Do I need OTP for signup?",
     answer:
-      "No. For this version, signup uses name, phone, email and password. You can login with phone, email or Tax Help ID."
+      "No. Optional signup uses name, phone and a password or PIN of at least four characters. Email is optional. You can login with phone, email or Tax Help ID."
   },
   {
     question: "Can I upload documents from my phone?",
     answer:
       "Yes. You can upload PDF, JPG, JPEG, PNG or WEBP files from your phone. You can also use WhatsApp if you need help."
+  },
+  {
+    question: "Can you help if an insurance claim is rejected or delayed?",
+    answer:
+      "Yes. Upload the policy, claim papers and rejection or status letter. Support can include document review, reply preparation, grievance escalation and legal coordination where required."
   },
   {
     question: "Do you promise refund?",
@@ -45,7 +50,7 @@ export const serviceFaqs: FAQItem[] = [
   {
     question: "How does the process start?",
     answer:
-      "Choose the service, create your account, upload documents and wait for the fee or next step confirmation."
+      "Choose the service, enter your name and phone number, then upload what you have. An account is optional."
   },
   {
     question: "Will I see the fee before work starts?",

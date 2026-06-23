@@ -3,7 +3,7 @@ import { serviceFaqs, type FAQItem } from "@/data/faqs";
 export type Service = {
   slug: string;
   label: string;
-  category: "itr" | "gst" | "business" | "loan" | "local" | "support";
+  category: "itr" | "gst" | "business" | "insurance" | "loan" | "local" | "support";
   metaTitle: string;
   metaDescription: string;
   heroTitle: string;
@@ -18,14 +18,293 @@ export type Service = {
 };
 
 const standardProcess = [
-  "Choose the service and share basic details.",
-  "Create your account or request a call back.",
-  "Upload documents from your phone.",
-  "See the fee and choose payment mode.",
-  "Track updates from your dashboard."
+  "Tell us your issue and share your phone number.",
+  "Upload what you have from your phone.",
+  "Our team reviews the papers and contacts you.",
+  "We move the filing, reply, documentation or escalation forward."
 ];
 
+const insuranceProcess = [
+  "Tell us what happened with the claim.",
+  "Upload the policy, claim papers and insurer communication you have.",
+  "Our team reviews the issue and contacts you.",
+  "We help with the reply, grievance, tracking or legal escalation required."
+];
+
+const insuranceCommonDocuments = [
+  "Policy copy",
+  "Claim rejection letter or latest claim status",
+  "Claim form and supporting papers",
+  "Email, SMS or WhatsApp communication with the insurer",
+  "ID proof",
+  "Bank details if settlement is involved",
+  "Other supporting documents"
+];
+
+function insuranceService(input: {
+  slug: string;
+  label: string;
+  metaTitle: string;
+  metaDescription: string;
+  heroTitle: string;
+  heroText: string;
+  whoFor: string[];
+  whatWeDo: string[];
+  documents?: string[];
+  process?: string[];
+  related: string[];
+  faqQuestion: string;
+  faqAnswer: string;
+}): Service {
+  return {
+    ...input,
+    category: "insurance",
+    process: input.process || insuranceProcess,
+    documents: input.documents || insuranceCommonDocuments,
+    priceNote: "Fee is confirmed after checking claim type, amount, documents and required action.",
+    faqs: [
+      { question: input.faqQuestion, answer: input.faqAnswer },
+      { question: "Can I start if some documents are missing?", answer: "Yes. Upload what you have. Our team will tell you which papers are still needed." },
+      { question: "Can you help with escalation?", answer: "Yes. Support can include insurer replies, grievance escalation and coordination for legal action where required." }
+    ]
+  };
+}
+
 export const services: Service[] = [
+  insuranceService({
+    slug: "insurance-claim-support",
+    label: "Insurance Claim Support",
+    metaTitle: "Insurance Claim Support Services in Bhubaneswar and Odisha",
+    metaDescription: "Insurance claim documentation, form preparation, follow-up, rejection review, settlement and escalation support from VB Consultants.",
+    heroTitle: "Insurance Claim Support Services",
+    heroText: "Facing problems with an insurance claim? VB Consultants helps with documentation, claim form preparation, submission support, follow-up and escalation support.",
+    whoFor: ["People with rejected claims", "Families waiting for health or life claim settlement", "Motor and property policyholders", "Businesses facing insurance claim disputes"],
+    whatWeDo: ["Professional documentation support", "Claim form preparation and submission support", "Follow-up and rejection review", "Settlement documentation, escalation and legal coordination where needed"],
+    documents: ["Policy copy", "Claim form", "Claim rejection or status letter if any", "Bills, reports and discharge summary for health claims", "FIR, repair estimate or survey report for motor claims", "Insurance company communication", "ID proof", "Nominee documents if applicable", "Settlement papers if applicable", "Other supporting documents"],
+    process: ["Share your claim issue", "Upload policy and claim papers", "We review documents", "We help prepare forms and replies", "We support follow-up and escalation", "Settlement documentation support"],
+    related: ["insurance-claim-documentation-support", "health-insurance-claim-help", "insurance-claim-rejected"],
+    faqQuestion: "What claim problems can you help with?",
+    faqAnswer: "Support is available for rejected, delayed, underpaid and disputed health, life, motor, property and business insurance claims."
+  }),
+  insuranceService({
+    slug: "insurance-claim-rejected",
+    label: "Claim Rejection Review & Documentation Guidance",
+    metaTitle: "Insurance Claim Rejected? Get Claim Support",
+    metaDescription: "Upload your insurance rejection letter, policy and claim papers for review, reply preparation and escalation support.",
+    heroTitle: "Insurance claim rejected? Get help with the next action.",
+    heroText: "A rejection letter may leave room for clarification, review or escalation. Share the reason given by the insurer and the papers already submitted.",
+    whoFor: ["Policyholders who received a rejection letter", "Claims closed for document or policy reasons", "Claims disputed on exclusions or disclosure", "Families unsure how to reply"],
+    whatWeDo: ["Read the rejection reason", "Compare the reason with available policy and claim papers", "Prepare a document and reply plan", "Support grievance or legal escalation when needed"],
+    related: ["insurance-claim-support", "health-insurance-claim-help", "insurance-legal-escalation-support"],
+    faqQuestion: "Does every rejected claim require legal action?",
+    faqAnswer: "No. Some matters move through a document reply or grievance process. The next step depends on the rejection reason and records."
+  }),
+  insuranceService({
+    slug: "insurance-claim-documentation-support",
+    label: "Insurance Claim Documentation Support",
+    metaTitle: "Insurance Claim Documentation Support | VB Consultants",
+    metaDescription: "Organize policy, claim, evidence and insurer records for a clear insurance claim submission or response.",
+    heroTitle: "Insurance claim documentation support.",
+    heroText: "Build a complete, easy-to-review claim file before submission, follow-up or escalation.",
+    whoFor: ["People starting a new claim", "Claims with missing-document queries", "Families organizing medical or nominee records", "Businesses preparing loss evidence"],
+    whatWeDo: ["Prepare a claim document checklist", "Organize records by claim stage", "Identify missing evidence", "Prepare a submission-ready file"],
+    related: ["claim-form-preparation-support", "insurance-claim-follow-up", "insurance-claim-support"],
+    faqQuestion: "Can you review documents before I submit the claim?",
+    faqAnswer: "Yes. Upload the available policy and claim records. We help organize them and identify missing papers."
+  }),
+  insuranceService({
+    slug: "life-insurance-claim-assistance",
+    label: "Life Insurance Claim Assistance",
+    metaTitle: "Life Insurance Claim Assistance for Nominees and Families",
+    metaDescription: "Life insurance claim form, nominee document, follow-up and escalation assistance for families and beneficiaries.",
+    heroTitle: "Life insurance claim assistance for nominees and families.",
+    heroText: "Get help organizing policy, nominee, event and insurer papers from claim submission through follow-up.",
+    whoFor: ["Nominees filing a life claim", "Families answering insurer queries", "Delayed settlement cases", "Claims needing documentation review"],
+    whatWeDo: ["Prepare nominee document checklist", "Support claim form completion", "Organize event and policy records", "Assist follow-up and escalation"],
+    documents: [...insuranceCommonDocuments, "Death certificate and nominee records", "Medical or event records requested by the insurer"],
+    related: ["nominee-claim-assistance", "life-insurance-claim-dispute", "insurance-claim-follow-up"],
+    faqQuestion: "Who can submit a life insurance claim request?",
+    faqAnswer: "The nominee or an authorized family member can start with the policy, death certificate and available insurer papers."
+  }),
+  insuranceService({
+    slug: "motor-insurance-claim-support",
+    label: "Motor Insurance Claim Support",
+    metaTitle: "Motor Insurance Claim Support for Accident and Repair Claims",
+    metaDescription: "Motor claim documentation, survey, repair estimate, follow-up and dispute support for vehicle owners.",
+    heroTitle: "Motor insurance claim support after an accident or loss.",
+    heroText: "Organize the FIR where applicable, vehicle papers, repair estimate, survey communication and claim follow-up.",
+    whoFor: ["Vehicle owners after an accident", "Repair approval cases", "Theft or total-loss claims", "Claims delayed after survey"],
+    whatWeDo: ["Prepare accident document checklist", "Organize repair and survey papers", "Support insurer follow-up", "Assist rejection or short-settlement review"],
+    documents: [...insuranceCommonDocuments, "FIR if applicable", "Repair estimate and invoices", "Survey report, vehicle papers and photographs"],
+    related: ["motor-insurance-claim-dispute", "settlement-documentation-assistance", "insurance-claim-follow-up"],
+    faqQuestion: "Can I start before receiving the survey report?",
+    faqAnswer: "Yes. Start with the policy, vehicle papers, photographs, FIR if applicable and repair estimate."
+  }),
+  insuranceService({
+    slug: "personal-accident-insurance-claim",
+    label: "Personal Accident Insurance Claim Assistance",
+    metaTitle: "Personal Accident Insurance Claim Assistance",
+    metaDescription: "Document and follow-up assistance for personal accident insurance claims involving injury, disability or accidental death.",
+    heroTitle: "Personal accident insurance claim assistance.",
+    heroText: "Get help organizing accident, medical, employment and nominee documents for claim submission and follow-up.",
+    whoFor: ["Accidental injury claimants", "Disability benefit claims", "Accidental death nominees", "Claims facing document queries"],
+    whatWeDo: ["Identify policy-specific documents", "Organize accident and medical evidence", "Support form and submission preparation", "Assist follow-up and escalation"],
+    documents: [...insuranceCommonDocuments, "FIR or accident report", "Medical and disability records", "Employment or income records if required", "Nominee documents where applicable"],
+    related: ["claim-form-preparation-support", "nominee-claim-assistance", "insurance-claim-rejected"],
+    faqQuestion: "Which accident records are useful?",
+    faqAnswer: "Keep the FIR or incident report, medical records, bills, disability certificate if applicable and insurer communication."
+  }),
+  insuranceService({
+    slug: "claim-form-preparation-support",
+    label: "Claim Form Preparation & Submission Support",
+    metaTitle: "Insurance Claim Form Preparation and Submission Support",
+    metaDescription: "Help preparing insurance claim forms, supporting document indexes and submission records.",
+    heroTitle: "Prepare and submit your insurance claim papers clearly.",
+    heroText: "We help organize claim information, supporting records and submission acknowledgement for easier follow-up.",
+    whoFor: ["First-time claimants", "Families completing complex forms", "Claims returned for missing information", "Businesses submitting loss claims"],
+    whatWeDo: ["Review claim form fields", "Prepare supporting document list", "Organize the submission set", "Keep acknowledgement and follow-up details ready"],
+    related: ["insurance-claim-documentation-support", "insurance-claim-follow-up", "insurance-claim-support"],
+    faqQuestion: "Will you tell me which supporting papers go with the form?",
+    faqAnswer: "Yes. The checklist is prepared from the claim type, policy and information requested by the insurer."
+  }),
+  insuranceService({
+    slug: "insurance-claim-follow-up",
+    label: "Claim Follow-up with Insurance Companies",
+    metaTitle: "Insurance Claim Follow-up Support",
+    metaDescription: "Structured follow-up support for pending insurance claims, document queries and delayed claim decisions.",
+    heroTitle: "Insurance claim pending without a clear update?",
+    heroText: "Keep the claim number, submission proof and insurer communication together so follow-up stays clear and timely.",
+    whoFor: ["Claims pending after submission", "Repeated document-query cases", "Delayed survey or authorization cases", "Claimants without a clear status"],
+    whatWeDo: ["Create a follow-up chronology", "Track pending documents and responses", "Prepare communication support", "Escalate unresolved delays where required"],
+    related: ["insurance-claim-documentation-support", "settlement-documentation-assistance", "insurance-legal-escalation-support"],
+    faqQuestion: "What should I upload for follow-up support?",
+    faqAnswer: "Upload the claim acknowledgement, claim number, latest status, submitted papers and insurer communication."
+  }),
+  insuranceService({
+    slug: "settlement-documentation-assistance",
+    label: "Settlement Documentation Assistance",
+    metaTitle: "Insurance Settlement Documentation Assistance",
+    metaDescription: "Assistance reviewing settlement papers, deductions, discharge forms and bank documents for insurance claims.",
+    heroTitle: "Insurance settlement papers need review or completion?",
+    heroText: "Get help organizing settlement notes, deduction details, discharge forms and bank records before the next action.",
+    whoFor: ["Claims approved with paperwork pending", "Reduced or short settlement cases", "Discharge-voucher queries", "Bank-detail or nominee settlement issues"],
+    whatWeDo: ["Review settlement communication", "Organize settlement and bank papers", "Identify unexplained deductions", "Support reply or escalation for short settlement"],
+    documents: [...insuranceCommonDocuments, "Settlement note or discharge form", "Bank proof", "Deduction or calculation details"],
+    related: ["insurance-claim-follow-up", "insurance-claim-rejected", "insurance-legal-escalation-support"],
+    faqQuestion: "Can you help when the claim amount is reduced?",
+    faqAnswer: "Yes. Share the settlement note, submitted bill or loss amount, policy and deduction explanation available from the insurer."
+  }),
+  insuranceService({
+    slug: "nominee-claim-assistance",
+    label: "Nominee Claim Assistance",
+    metaTitle: "Nominee Insurance Claim Assistance",
+    metaDescription: "Nominee document, claim form, insurer query and settlement assistance for life and accident insurance claims.",
+    heroTitle: "Nominee claim assistance with clear document guidance.",
+    heroText: "We help nominees and families organize identity, relationship, policy, event and bank records for claim processing.",
+    whoFor: ["Life insurance nominees", "Personal accident claim nominees", "Families handling insurer queries", "Settlement cases needing nominee records"],
+    whatWeDo: ["Prepare nominee document checklist", "Support claim form completion", "Organize identity and relationship proof", "Assist insurer follow-up and settlement papers"],
+    documents: [...insuranceCommonDocuments, "Death certificate where applicable", "Nominee identity and relationship documents", "Bank proof and insurer forms"],
+    related: ["life-insurance-claim-assistance", "personal-accident-insurance-claim", "settlement-documentation-assistance"],
+    faqQuestion: "What if the nominee details need clarification?",
+    faqAnswer: "Start with the policy, claimant and nominee identity records, relationship proof and the insurer query."
+  }),
+  insuranceService({
+    slug: "health-insurance-claim-help",
+    label: "Health Insurance Claim Assistance",
+    metaTitle: "Health Insurance Claim Rejected or Delayed? Get Support",
+    metaDescription: "Health insurance claim support for rejected, delayed, reduced or disputed hospital and reimbursement claims.",
+    heroTitle: "Health insurance claim rejected or delayed?",
+    heroText: "Share hospital papers, bills, the policy and insurer communication. We help organize the claim issue and guide the next response.",
+    whoFor: ["Hospitalization claim applicants", "Families with rejected reimbursement claims", "Policyholders facing deduction or underpayment", "People waiting for a delayed decision"],
+    whatWeDo: ["Review hospital and policy records", "Check the insurer's reason or pending requirement", "Organize bills and medical documents", "Support reply, grievance and escalation steps"],
+    documents: [...insuranceCommonDocuments, "Hospital bills", "Discharge summary", "Diagnostic reports and prescriptions"],
+    related: ["cashless-claim-denied", "mediclaim-reimbursement-help", "insurance-claim-rejected"],
+    faqQuestion: "Which hospital records should I upload?",
+    faqAnswer: "Upload the discharge summary, final bill, payment receipts, prescriptions, reports and any insurer query or rejection letter you have."
+  }),
+  insuranceService({
+    slug: "mediclaim-reimbursement-help",
+    label: "Mediclaim Reimbursement Help",
+    metaTitle: "Mediclaim Reimbursement Stuck? Get Document Support",
+    metaDescription: "Support for mediclaim reimbursement that is delayed, queried, reduced or rejected. Upload hospital bills and insurer communication.",
+    heroTitle: "Mediclaim reimbursement stuck or reduced?",
+    heroText: "We help organize the reimbursement file, understand insurer queries and prepare the papers needed for the next step.",
+    whoFor: ["People who paid hospital bills directly", "Reimbursement claims with repeated queries", "Claims delayed after document submission", "Claims settled below the submitted amount"],
+    whatWeDo: ["Organize bills, receipts and discharge records", "Review query and deduction reasons", "Prepare missing-document and reply checklist", "Support grievance escalation for unresolved issues"],
+    documents: [...insuranceCommonDocuments, "Hospital final bill and payment receipts", "Discharge summary", "Medical reports, prescriptions and pharmacy bills"],
+    related: ["health-insurance-claim-help", "cashless-claim-denied", "insurance-claim-support"],
+    faqQuestion: "Can you help when the insurer keeps asking for documents?",
+    faqAnswer: "Yes. Share the query letters and what you already submitted. We will help organize the response and identify missing records."
+  }),
+  insuranceService({
+    slug: "cashless-claim-denied",
+    label: "Cashless Claim Denied Help",
+    metaTitle: "Cashless Claim Denied? Get Help With Next Steps",
+    metaDescription: "Cashless health insurance claim denied? Get help organizing hospital, policy and insurer papers for reimbursement or escalation.",
+    heroTitle: "Cashless claim denied at the hospital?",
+    heroText: "Keep the denial message, hospital estimate and policy papers. We help you understand the next document route, including reimbursement support where applicable.",
+    whoFor: ["Patients denied cashless authorization", "Families asked to pay hospital costs", "Cashless requests partly approved", "Cases needing reimbursement follow-up"],
+    whatWeDo: ["Review the denial or authorization message", "Check hospital estimate and policy papers", "Prepare a reimbursement document checklist", "Support insurer grievance and follow-up"],
+    documents: [...insuranceCommonDocuments, "Cashless denial or authorization message", "Hospital estimate", "Discharge summary and bills if treatment is complete"],
+    related: ["health-insurance-claim-help", "mediclaim-reimbursement-help", "insurance-legal-escalation-support"],
+    faqQuestion: "What should I keep after cashless denial?",
+    faqAnswer: "Keep the denial message, hospital estimate, admission records, bills, payment receipts and policy details. These may be needed for reimbursement."
+  }),
+  insuranceService({
+    slug: "life-insurance-claim-dispute",
+    label: "Life Insurance Claim Dispute",
+    metaTitle: "Life Insurance Claim Dispute Support",
+    metaDescription: "Support for delayed, rejected or disputed life insurance claims, nominee documentation and insurer escalation.",
+    heroTitle: "Life insurance claim delayed or disputed?",
+    heroText: "Share the policy, claim papers and insurer communication. We help the nominee or family organize the issue and prepare the next action.",
+    whoFor: ["Nominees facing a delayed decision", "Families who received a rejection", "Claims with disclosure or document disputes", "Cases requiring grievance or legal escalation"],
+    whatWeDo: ["Review policy and claim communication", "Organize nominee and event records", "Help prepare insurer replies", "Coordinate grievance and legal escalation support"],
+    documents: [...insuranceCommonDocuments, "Death certificate and nominee records", "Medical or event records requested by the insurer"],
+    related: ["insurance-claim-rejected", "insurance-legal-escalation-support", "insurance-claim-support"],
+    faqQuestion: "Can a nominee start the request?",
+    faqAnswer: "Yes. The nominee or an authorized family member can share the available policy, claim and insurer records."
+  }),
+  insuranceService({
+    slug: "motor-insurance-claim-dispute",
+    label: "Motor Insurance Claim Dispute",
+    metaTitle: "Motor Insurance Claim Dispute Support",
+    metaDescription: "Motor insurance support for rejected, delayed or reduced accident, repair and total-loss claim disputes.",
+    heroTitle: "Motor insurance claim rejected, delayed or reduced?",
+    heroText: "Upload the policy, FIR if applicable, repair estimate, survey papers and insurer response. We help organize the dispute and next action.",
+    whoFor: ["Vehicle owners with rejected accident claims", "Claims reduced after survey", "Repair approval disputes", "Total-loss or theft claim delays"],
+    whatWeDo: ["Review survey and insurer communication", "Organize accident and repair records", "Prepare a reply or grievance file", "Support escalation where the dispute remains unresolved"],
+    documents: [...insuranceCommonDocuments, "FIR or police report if applicable", "Repair estimate and invoices", "Survey report, vehicle papers and photographs"],
+    related: ["insurance-claim-rejected", "property-insurance-claim-help", "insurance-legal-escalation-support"],
+    faqQuestion: "Do I need the survey report?",
+    faqAnswer: "Upload it if available. You can still start with the policy, insurer messages, repair estimate, photographs and accident records."
+  }),
+  insuranceService({
+    slug: "property-insurance-claim-help",
+    label: "Property / Business Insurance Claim Help",
+    metaTitle: "Property and Business Insurance Claim Support",
+    metaDescription: "Support for fire, property, stock, machinery and business insurance claim documentation, disputes and escalation.",
+    heroTitle: "Property, fire or business insurance claim problem?",
+    heroText: "Organize loss records, survey communication, invoices and insurer letters. We help prepare the documentation and escalation path.",
+    whoFor: ["Businesses with fire or stock loss claims", "Property owners with damage claims", "Machinery and commercial policyholders", "Claims delayed after survey or inspection"],
+    whatWeDo: ["Review loss and survey documents", "Organize invoices, stock and ownership records", "Help prepare insurer replies", "Coordinate grievance or legal escalation support"],
+    documents: [...insuranceCommonDocuments, "FIR, fire report or incident report", "Survey report and photographs", "Stock, purchase, repair or ownership records"],
+    related: ["insurance-claim-support", "motor-insurance-claim-dispute", "insurance-legal-escalation-support"],
+    faqQuestion: "Can a business submit stock and invoice records?",
+    faqAnswer: "Yes. Upload available stock statements, purchase invoices, asset records, photographs and survey communication relevant to the loss."
+  }),
+  insuranceService({
+    slug: "insurance-legal-escalation-support",
+    label: "Insurance Legal Escalation Support",
+    metaTitle: "Insurance Legal Escalation and Grievance Support",
+    metaDescription: "Insurance grievance, Ombudsman and legal escalation coordination for unresolved rejected, delayed or underpaid claims.",
+    heroTitle: "Insurance grievance and legal escalation support.",
+    heroText: "When ordinary follow-up is not moving the claim, we help organize the record, prepare escalation papers and coordinate legal action where required.",
+    whoFor: ["Claims unresolved after insurer follow-up", "Policyholders preparing a grievance", "Matters requiring Ombudsman or legal review", "Families and businesses needing coordinated case papers"],
+    whatWeDo: ["Build a clear chronology and document file", "Prepare grievance and escalation support", "Track insurer and authority communication", "Coordinate legal action with appropriate professionals where required"],
+    related: ["insurance-claim-support", "insurance-claim-rejected", "property-insurance-claim-help"],
+    faqQuestion: "When is legal escalation considered?",
+    faqAnswer: "It may be considered when document replies and grievance follow-up do not resolve the dispute, depending on the records, amount and applicable process."
+  }),
   {
     slug: "salary-itr-filing",
     label: "Salary ITR Filing",
@@ -593,6 +872,23 @@ export const services: Service[] = [
 ];
 
 export const serviceOptions = [
+  { value: "insurance-claim-support", label: "Insurance claim support" },
+  { value: "insurance-claim-documentation-support", label: "Insurance claim documentation" },
+  { value: "health-insurance-claim-help", label: "Health insurance claim assistance" },
+  { value: "life-insurance-claim-assistance", label: "Life insurance claim assistance" },
+  { value: "motor-insurance-claim-support", label: "Motor insurance claim support" },
+  { value: "personal-accident-insurance-claim", label: "Personal accident claim assistance" },
+  { value: "claim-form-preparation-support", label: "Claim form preparation" },
+  { value: "insurance-claim-follow-up", label: "Insurance claim follow-up" },
+  { value: "insurance-claim-rejected", label: "Claim rejection review" },
+  { value: "settlement-documentation-assistance", label: "Settlement documentation" },
+  { value: "nominee-claim-assistance", label: "Nominee claim assistance" },
+  { value: "mediclaim-reimbursement-help", label: "Mediclaim reimbursement help" },
+  { value: "cashless-claim-denied", label: "Cashless claim denied" },
+  { value: "life-insurance-claim-dispute", label: "Life insurance claim dispute" },
+  { value: "motor-insurance-claim-dispute", label: "Motor insurance claim dispute" },
+  { value: "property-insurance-claim-help", label: "Property / business insurance claim" },
+  { value: "insurance-legal-escalation-support", label: "Insurance legal escalation" },
   { value: "salary-itr-filing", label: "Salary / Form 16 ITR" },
   { value: "itr-1-filing", label: "ITR-1 filing" },
   { value: "itr-2-capital-gains-filing", label: "Capital gains / ITR-2" },
@@ -611,7 +907,17 @@ export const serviceOptions = [
   { value: "not-sure", label: "Not sure" }
 ] as const;
 
+export const heroServiceOptions = [
+  { value: "salary-itr-filing", label: "ITR / Income Tax Filing" },
+  { value: "gst-services", label: "GST / Business Compliance" },
+  { value: "insurance-claim-support", label: "Insurance Claim Support" },
+  { value: "loan-project-report", label: "Loan / Subsidy / Project Report" },
+  { value: "tax-notice-help", label: "Tax Notice" },
+  { value: "not-sure", label: "Not Sure" }
+] as const;
+
 export const popularServiceSlugs = [
+  "insurance-claim-support",
   "salary-itr-filing",
   "itr-1-filing",
   "gst-return-filing",

@@ -52,11 +52,15 @@ function verify_token(?string $token, string $type): ?array {
 }
 
 function bearer_token(): ?string {
+    $cookieToken = $_COOKIE[auth_cookie_name()] ?? ($_COOKIE['tax_help_token'] ?? null);
+    if ($cookieToken) {
+        return $cookieToken;
+    }
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (stripos($header, 'Bearer ') === 0) {
         return trim(substr($header, 7));
     }
-    return $_COOKIE[auth_cookie_name()] ?? ($_COOKIE['tax_help_token'] ?? null);
+    return null;
 }
 
 function auth_cookie_name(): string {
@@ -148,6 +152,14 @@ function revoke_current_user_session(): void {
 }
 
 function require_user(): array {
+    $user = optional_user();
+    if (!$user) {
+        fail('Please login first.', 401);
+    }
+    return $user;
+}
+
+function optional_user(): ?array {
     $token = bearer_token();
     $sessionUser = user_from_session_token($token);
     if ($sessionUser) {
@@ -156,13 +168,13 @@ function require_user(): array {
 
     $payload = verify_token($token, 'user');
     if (!$payload) {
-        fail('Please login first.', 401);
+        return null;
     }
     $stmt = db()->prepare('SELECT id, tax_help_id, full_name, phone, email FROM users WHERE id = ?');
     $stmt->execute([(int) $payload['sub']]);
     $user = $stmt->fetch();
     if (!$user) {
-        fail('User not found.', 401);
+        return null;
     }
     return $user;
 }

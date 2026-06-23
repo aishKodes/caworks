@@ -16,6 +16,11 @@ function check_status(bool $ok): string {
     return $ok ? '<span class="badge ok">OK</span>' : '<span class="badge warn">Check</span>';
 }
 
+function is_placeholder_address(string $address): bool {
+    if (trim($address) === '') return false;
+    return (bool) preg_match('/your address here|add your address|office address placeholder|rayagada placeholder|123 business street|sample address|put address here/i', $address);
+}
+
 $config = app_config();
 $requiredTables = [
     'users',
@@ -26,6 +31,7 @@ $requiredTables = [
     'quick_leads',
     'service_requests',
     'documents',
+    'uploaded_documents',
     'service_document_requirements',
     'payments',
     'manual_payment_screenshots',
@@ -59,6 +65,15 @@ $uploadDir = (string) ($config['upload_dir'] ?? '');
 $mediaDir = (string) ($config['media_dir'] ?? '');
 $recentApiErrors = [];
 $recentEmailErrors = [];
+$settings = [];
+try {
+    $settings = cms_settings();
+} catch (Throwable $ignored) {
+}
+$publicPhone = trim((string) ($settings['phone'] ?? $config['public_phone'] ?? ''));
+$officeAddress = trim((string) ($settings['address'] ?? $config['office_address'] ?? ''));
+$addressIsPlaceholder = is_placeholder_address($officeAddress);
+$superAdminExists = admin_count("SELECT COUNT(*) c FROM admin_users WHERE role='super_admin'") > 0;
 try {
     $recentApiErrors = db()->query('SELECT request_id, path, message, created_at FROM api_errors ORDER BY created_at DESC LIMIT 5')->fetchAll();
 } catch (Throwable $ignored) {
@@ -81,6 +96,12 @@ admin_header('System Check');
       <tr><td>Cookie name</td><td><?= check_status(!empty($config['SESSION_COOKIE_NAME'] ?? $config['session_cookie_name'] ?? '')) ?></td><td><?= e($config['SESSION_COOKIE_NAME'] ?? $config['session_cookie_name'] ?? '') ?></td></tr>
       <tr><td>Cookie domain</td><td><?= check_status(!empty($config['SESSION_COOKIE_DOMAIN'] ?? $config['session_cookie_domain'] ?? '')) ?></td><td><?= e($config['SESSION_COOKIE_DOMAIN'] ?? $config['session_cookie_domain'] ?? '') ?></td></tr>
       <tr><td>CORS credentials</td><td><?= check_status(true) ?></td><td>API sends credentials for the allowed origin</td></tr>
+      <tr><td>Public signup route</td><td><?= check_status(true) ?></td><td><code>POST /api/signup</code> is registered independently of admin setup</td></tr>
+      <tr><td>Guest request route</td><td><?= check_status(true) ?></td><td><code>POST /api/guest-request</code> is registered independently of admin setup</td></tr>
+      <tr><td>Admin setup</td><td><?= check_status($superAdminExists) ?></td><td><?= e($superAdminExists ? 'Super admin created' : 'Open /admin/setup.php') ?></td></tr>
+      <tr><td>Public phone</td><td><?= check_status($publicPhone !== '') ?></td><td><?= e($publicPhone) ?></td></tr>
+      <tr><td>Office address</td><td><?= check_status(!$addressIsPlaceholder) ?></td><td><?= e($officeAddress !== '' ? $officeAddress : 'Not set; public address block will be hidden') ?></td></tr>
+      <?php if ($addressIsPlaceholder): ?><tr><td>Address warning</td><td><?= check_status(false) ?></td><td>Remove the placeholder address in Site Settings.</td></tr><?php endif; ?>
       <tr><td>Upload directory</td><td><?= check_status($uploadDir !== '' && is_dir($uploadDir) && is_writable($uploadDir)) ?></td><td><?= e($uploadDir) ?></td></tr>
       <tr><td>Media directory</td><td><?= check_status($mediaDir !== '' && is_dir($mediaDir) && is_writable($mediaDir)) ?></td><td><?= e($mediaDir) ?></td></tr>
     </table>

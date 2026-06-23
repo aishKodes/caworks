@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'faqs' => cms_decode_json($_POST['faqs'] ?? '[]', []),
         'finalCtaTitle' => (string) ($_POST['final_cta_title'] ?? ''),
         'finalCtaDescription' => (string) ($_POST['final_cta_description'] ?? ''),
+        'insuranceTitle' => (string) ($_POST['insurance_title'] ?? ''),
+        'insuranceSubtitle' => (string) ($_POST['insurance_subtitle'] ?? ''),
+        'insuranceProblems' => cms_decode_json($_POST['insurance_problems'] ?? '[]', []),
     ];
     $stmt = db()->prepare('INSERT INTO homepage_sections (section_key,title,subtitle,image_path,cta_primary_label,cta_primary_url,cta_secondary_label,cta_secondary_url,content_json,is_visible,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,1) ON DUPLICATE KEY UPDATE title=VALUES(title), subtitle=VALUES(subtitle), image_path=VALUES(image_path), cta_primary_label=VALUES(cta_primary_label), cta_primary_url=VALUES(cta_primary_url), cta_secondary_label=VALUES(cta_secondary_label), cta_secondary_url=VALUES(cta_secondary_url), content_json=VALUES(content_json), is_visible=VALUES(is_visible), updated_at=NOW()');
     $stmt->execute([
@@ -53,6 +56,9 @@ if ($message) echo '<div class="notice">' . e($message) . '</div>';
     <label class="field"><span>Section visibility JSON</span><textarea name="section_visibility"><?= e(json_encode($content['sectionVisibility'] ?? new stdClass(), JSON_PRETTY_PRINT)) ?></textarea></label>
     <label class="field"><span>Trust badges JSON</span><textarea name="trust_badges"><?= e(json_encode($content['trustBadges'] ?? [], JSON_PRETTY_PRINT)) ?></textarea></label>
     <label class="field"><span>Featured services JSON</span><textarea name="featured_services"><?= e(json_encode($content['featuredServices'] ?? [], JSON_PRETTY_PRINT)) ?></textarea></label>
+    <label class="field"><span>Insurance section title</span><input name="insurance_title" value="<?= e($content['insuranceTitle'] ?? '') ?>"></label>
+    <label class="field"><span>Insurance section copy</span><textarea name="insurance_subtitle"><?= e($content['insuranceSubtitle'] ?? '') ?></textarea></label>
+    <label class="field"><span>Insurance problem cards JSON</span><textarea name="insurance_problems"><?= e(json_encode($content['insuranceProblems'] ?? [], JSON_PRETTY_PRINT)) ?></textarea></label>
     <label class="field"><span>Testimonials JSON</span><textarea name="testimonials"><?= e(json_encode($content['testimonials'] ?? [], JSON_PRETTY_PRINT)) ?></textarea></label>
     <label class="field"><span>Homepage FAQs JSON</span><textarea name="faqs"><?= e(json_encode($content['faqs'] ?? [], JSON_PRETTY_PRINT)) ?></textarea></label>
     <label class="field"><span>Final CTA title</span><input name="final_cta_title" value="<?= e($content['finalCtaTitle'] ?? '') ?>"></label>

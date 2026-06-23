@@ -132,6 +132,9 @@ function cms_homepage_payload(): array {
         'faqs' => $content['faqs'] ?? [],
         'finalCtaTitle' => $content['finalCtaTitle'] ?? null,
         'finalCtaDescription' => $content['finalCtaDescription'] ?? null,
+        'insuranceTitle' => $content['insuranceTitle'] ?? null,
+        'insuranceSubtitle' => $content['insuranceSubtitle'] ?? null,
+        'insuranceProblems' => $content['insuranceProblems'] ?? [],
     ];
 }
 

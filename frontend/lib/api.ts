@@ -24,14 +24,29 @@ export type SignupPayload = {
   fullName?: string;
   name?: string;
   phone: string;
-  email: string;
+  email?: string;
   password: string;
-  confirm_password?: string;
-  confirmPassword?: string;
   consent?: boolean;
   service?: string;
   intent?: string;
   returnTo?: string;
+};
+
+export type GuestRequestPayload = {
+  name: string;
+  phone: string;
+  email?: string;
+  service_slug: string;
+  message?: string;
+  honeypot?: string;
+};
+
+export type GuestRequestResult = {
+  request_id: string;
+  request_db_id: number;
+  upload_token: string;
+  upload_url: string;
+  upload_path: string;
 };
 
 export type LoginPayload = {
@@ -137,18 +152,26 @@ export function submitQuickLead(payload: QuickLeadPayload) {
   return jsonRequest("/api/quick-lead", payload);
 }
 
+export function submitGuestRequest(payload: GuestRequestPayload) {
+  return jsonRequest<GuestRequestResult>("/api/guest-request", payload);
+}
+
 export async function signup(payload: SignupPayload) {
-  const result = await jsonRequest<{ token: string; user: UserSummary }>("/api/signup", payload);
+  const result = await jsonRequest<{ token?: string; user: UserSummary }>("/api/signup", payload);
   if (result.ok && result.data?.token) {
     setStoredToken(result.data.token);
+  } else if (result.ok) {
+    clearStoredToken();
   }
   return result;
 }
 
 export async function login(payload: LoginPayload) {
-  const result = await jsonRequest<{ token: string; user: UserSummary }>("/api/login", payload);
+  const result = await jsonRequest<{ token?: string; user: UserSummary }>("/api/login", payload);
   if (result.ok && result.data?.token) {
     setStoredToken(result.data.token);
+  } else if (result.ok) {
+    clearStoredToken();
   }
   return result;
 }

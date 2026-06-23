@@ -82,5 +82,65 @@ export const pricingPlans = [
     price: "Custom",
     description: "For subsidy or scheme document checklist and application paperwork guidance.",
     features: ["Scheme documents", "Eligibility records", "Project estimate", "Next steps"]
+  },
+  {
+    name: "Insurance Claim Documentation Support",
+    price: "Custom",
+    description: "Initial review of policy, rejection or status letter and available claim papers.",
+    features: ["Policy review", "Claim issue summary", "Missing document list", "Next action"]
+  },
+  {
+    name: "Health Insurance Claim Assistance",
+    price: "Custom",
+    description: "Hospital, reimbursement, cashless and insurer-query documentation assistance.",
+    features: ["Hospital papers", "Claim checklist", "Query response", "Follow-up support"]
+  },
+  {
+    name: "Life Insurance Claim Assistance",
+    price: "Custom",
+    description: "Policy, nominee, event and settlement documentation assistance.",
+    features: ["Nominee papers", "Claim form", "Event records", "Follow-up support"]
+  },
+  {
+    name: "Motor Insurance Claim Support",
+    price: "Custom",
+    description: "Accident, repair estimate, survey and settlement documentation support.",
+    features: ["Accident records", "Repair estimate", "Survey papers", "Follow-up"]
+  },
+  {
+    name: "Personal Accident Claim Assistance",
+    price: "Custom",
+    description: "Injury, disability and accidental death claim document assistance.",
+    features: ["Accident evidence", "Medical papers", "Nominee records", "Submission support"]
+  },
+  {
+    name: "Claim Form Preparation & Submission Support",
+    price: "Custom",
+    description: "Claim form, supporting document and submission-record assistance.",
+    features: ["Form review", "Document index", "Submission set", "Acknowledgement"]
+  },
+  {
+    name: "Claim Follow-up Support",
+    price: "Custom",
+    description: "Structured follow-up support for pending claims and insurer queries.",
+    features: ["Status review", "Chronology", "Communication", "Escalation support"]
+  },
+  {
+    name: "Claim Rejection Review",
+    price: "Custom",
+    description: "Review rejection reasons and prepare the document path for the next action.",
+    features: ["Rejection review", "Policy papers", "Reply checklist", "Escalation path"]
+  },
+  {
+    name: "Settlement Documentation Assistance",
+    price: "Custom",
+    description: "Settlement note, deduction, discharge form and bank-paper assistance.",
+    features: ["Settlement note", "Deductions", "Discharge papers", "Bank proof"]
+  },
+  {
+    name: "Nominee Claim Assistance",
+    price: "Custom",
+    description: "Nominee identity, relationship, claim form and settlement assistance.",
+    features: ["Nominee records", "Relationship proof", "Claim form", "Settlement support"]
   }
 ] as const;

@@ -1,19 +1,61 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { FAQAccordion } from "@/components/FAQAccordion";
-import { IntentLink } from "@/components/IntentLink";
+import { GuestRequestForm } from "@/components/GuestRequestForm";
 import { ProcessSteps } from "@/components/ProcessSteps";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ServiceCard } from "@/components/ServiceCard";
-import { ServiceRequestForm } from "@/components/ServiceRequestForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { getRelatedServices, type Service } from "@/data/services";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { getBreadcrumbSchema, getFAQSchema, getServiceSchema } from "@/lib/schema";
 
+const insuranceSupportServices = [
+  { title: "Insurance Claim Documentation Support", text: "Organize policy, evidence and insurer records.", href: "/insurance-claim-documentation-support" },
+  { title: "Health Insurance Claim Assistance", text: "Hospital, reimbursement and cashless claim papers.", href: "/health-insurance-claim-help" },
+  { title: "Life Insurance Claim Assistance", text: "Policy, nominee and settlement document support.", href: "/life-insurance-claim-assistance" },
+  { title: "Motor Insurance Claim Support", text: "Accident, repair, survey and follow-up support.", href: "/motor-insurance-claim-support" },
+  { title: "Personal Accident Claim Assistance", text: "Injury, disability and nominee claim documents.", href: "/personal-accident-insurance-claim" },
+  { title: "Claim Form Preparation & Submission", text: "Prepare forms and supporting document sets.", href: "/claim-form-preparation-support" },
+  { title: "Claim Follow-up Support", text: "Structured follow-up for pending claim decisions.", href: "/insurance-claim-follow-up" },
+  { title: "Claim Rejection Review", text: "Review rejection reasons and prepare the next reply.", href: "/insurance-claim-rejected" },
+  { title: "Settlement Documentation Assistance", text: "Settlement notes, deductions and discharge papers.", href: "/settlement-documentation-assistance" },
+  { title: "Nominee Claim Assistance", text: "Identity, relationship, form and bank records.", href: "/nominee-claim-assistance" }
+];
+
+const insuranceClaimTypes = [
+  { title: "Health Insurance Claims", href: "/health-insurance-claim-help" },
+  { title: "Motor Insurance Claims", href: "/motor-insurance-claim-support" },
+  { title: "Life Insurance Claims", href: "/life-insurance-claim-assistance" },
+  { title: "Personal Accident Claims", href: "/personal-accident-insurance-claim" },
+  { title: "Property / Fire Insurance Claims", href: "/property-insurance-claim-help" },
+  { title: "Business Insurance Claims", href: "/property-insurance-claim-help" },
+  { title: "Claim Rejection Cases", href: "/insurance-claim-rejected" },
+  { title: "Delayed Settlement Cases", href: "/insurance-claim-follow-up" },
+  { title: "Underpaid / Short Settlement Cases", href: "/settlement-documentation-assistance" },
+  { title: "Nominee Claim Cases", href: "/nominee-claim-assistance" }
+];
+
+const insuranceTrustPoints = [
+  "Professional Documentation Support",
+  "Hassle-Free Claim Assistance",
+  "Timely Follow-up",
+  "Transparent Process",
+  "Personalized Guidance",
+  "Support from Start to Settlement",
+  "Escalation support where required",
+  "Legal support coordination where needed"
+];
+
+function ClaimSupportIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current"><path d="M12 3 5 6v5c0 4.5 2.7 8.1 7 10 4.3-1.9 7-5.5 7-10V6l-7-3Z" strokeWidth="1.8"/><path d="m9 12 2 2 4-5" strokeWidth="1.8"/></svg>;
+}
+
 function getDefaultServiceImage(service: Service) {
+  if (service.category === "insurance" || service.slug.includes("insurance") || service.slug.includes("mediclaim") || service.slug.includes("cashless")) return siteConfig.images.insuranceClaim;
   if (service.slug.includes("notice")) return siteConfig.images.taxNotice;
   if (service.slug.includes("loan") || service.slug.includes("project") || service.slug.includes("subsidy")) return siteConfig.images.loanProject;
   if (service.slug.includes("gst")) return siteConfig.images.gstConsultation;
@@ -24,6 +66,7 @@ function getDefaultServiceImage(service: Service) {
 }
 
 function getWhatsAppMessage(service: Service) {
+  if (service.category === "insurance" || service.slug.includes("insurance") || service.slug.includes("mediclaim") || service.slug.includes("cashless")) return whatsappMessages.insurance;
   if (service.slug.includes("salary") || service.slug.includes("itr-1")) return whatsappMessages.salaryItr;
   if (service.slug.includes("gst")) return whatsappMessages.gst;
   if (service.slug.includes("notice")) return whatsappMessages.notice;
@@ -34,6 +77,8 @@ function getWhatsAppMessage(service: Service) {
 export function ServicePageTemplate({ service, heroImage }: { service: Service; heroImage?: string }) {
   const related = getRelatedServices(service.related).filter((item) => item.slug !== "upload-documents");
   const image = heroImage || getDefaultServiceImage(service);
+  const isInsurance = service.category === "insurance";
+  const isInsuranceMain = service.slug === "insurance-claim-support";
 
   return (
     <>
@@ -55,12 +100,12 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
           <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">{service.heroTitle}</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-charcoal-700">{service.heroText}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <IntentLink href={`/request-service?service=${service.slug}`} intent="service_request" serviceSlug={service.slug} className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
-              Start request
-            </IntentLink>
-            <IntentLink href={`/upload-documents?service=${service.slug}`} intent="upload_documents" serviceSlug={service.slug} className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
-              Upload Documents
-            </IntentLink>
+            <Link href={`/request-service?service=${service.slug}`} className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
+              {isInsuranceMain ? "Get Insurance Claim Help" : isInsurance ? "Start claim support" : "Start request"}
+            </Link>
+            <Link href={`/request-service?service=${service.slug}&intent=upload_documents`} className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
+              {isInsurance ? "Upload claim documents" : "Upload Documents"}
+            </Link>
             <WhatsAppButton message={getWhatsAppMessage(service)} />
           </div>
           <div className="mt-8 overflow-hidden rounded-3xl border border-charcoal-900/10 bg-white shadow-premium">
@@ -74,10 +119,55 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
             </div>
           </div>
         </div>
-        <ServiceRequestForm defaultService={service.slug} />
+        <GuestRequestForm defaultService={service.slug} />
       </section>
 
-      <section className="bg-white/70 py-14">
+      {isInsuranceMain ? (
+        <>
+          <section className="container-shell pb-16">
+            <SectionHeader eyebrow="Insurance services" title="Complete claim support from documents to settlement" description="Choose the support you need today. Every service starts with a simple guest request and secure document upload." />
+            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {insuranceSupportServices.map((item) => (
+                <Link key={item.href} href={item.href} className="group rounded-3xl border border-charcoal-900/10 bg-white p-5 shadow-soft transition hover:-translate-y-1 hover:border-brand-600/30 hover:shadow-premium">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700"><ClaimSupportIcon /></span>
+                  <h2 className="mt-4 text-lg font-semibold text-charcoal-900">{item.title}</h2>
+                  <p className="mt-2 text-base leading-7 text-charcoal-700">{item.text}</p>
+                  <span className="mt-4 inline-flex text-sm font-semibold text-brand-700">Get help</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white/70 py-16">
+            <div className="container-shell">
+              <SectionHeader eyebrow="Claim types" title="We Assist With" description="Upload your claim papers and our team will review the next step." />
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {insuranceClaimTypes.map((item) => (
+                  <Link key={item.title} href={item.href} className="rounded-2xl border border-charcoal-900/10 bg-white p-5 shadow-soft transition hover:border-brand-600/30">
+                    <span className="text-brand-700"><ClaimSupportIcon /></span>
+                    <h3 className="mt-4 text-base font-semibold leading-6 text-charcoal-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-charcoal-700">Upload papers and review the next step.</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="container-shell section-padding">
+            <SectionHeader eyebrow="Why choose us" title="Why Choose VB Consultants for Insurance Claim Support?" description="Clear documentation, timely follow-up and practical support through each stage of the claim." />
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {insuranceTrustPoints.map((item) => (
+                <div key={item} className="rounded-2xl border border-charcoal-900/10 bg-charcoal-900 p-5 text-white shadow-soft">
+                  <span className="text-red-300"><ClaimSupportIcon /></span>
+                  <p className="mt-4 text-base font-semibold leading-7">{item}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {!isInsuranceMain ? <section className="bg-white/70 py-14">
         <div className="container-shell grid gap-8 lg:grid-cols-3">
           <div>
             <SectionHeader eyebrow="Who this helps" title="Built for simple mobile use." description="Choose the service, upload documents and track what is pending." />
@@ -90,7 +180,16 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
             ))}
           </div>
         </div>
-      </section>
+      </section> : null}
+
+      {isInsuranceMain ? (
+        <section className="bg-charcoal-900 py-16 text-white">
+          <div className="container-shell">
+            <SectionHeader eyebrow="Process" title="How insurance claim support works" description="From first document review through follow-up, escalation and settlement papers." className="text-white [&_h2]:text-white [&_p]:text-white/70" />
+            <div className="mt-10"><ProcessSteps steps={service.process} /></div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="container-shell section-padding grid gap-10 lg:grid-cols-2">
         <div>
@@ -114,22 +213,19 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
         </div>
       </section>
 
-      <section className="bg-charcoal-900 py-16 text-white">
+      {!isInsuranceMain ? <section className="bg-charcoal-900 py-16 text-white">
         <div className="container-shell">
-          <SectionHeader eyebrow="Process" title="How it works" description="Start, upload, pay and track from your phone." className="text-white [&_h2]:text-white [&_p]:text-white/70" />
+          <SectionHeader eyebrow="Process" title="How it works" description="Tell us the issue, upload what you have and let the work move forward." className="text-white [&_h2]:text-white [&_p]:text-white/70" />
           <div className="mt-10">
             <ProcessSteps steps={service.process} />
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <section className="container-shell section-padding">
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             <SectionHeader eyebrow="Pricing note" title="Fee is confirmed before work starts" description={service.priceNote} />
-            <div className="mt-6 rounded-2xl bg-brand-50 p-5 text-sm leading-7 text-brand-900">
-              Final fee depends on documents, income type and complexity. We do not make false refund promises.
-            </div>
           </div>
           <div>
             <SectionHeader eyebrow="FAQ" title="Common questions" />
@@ -140,6 +236,28 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
         </div>
       </section>
 
+      {isInsuranceMain ? (
+        <section className="container-shell pb-16">
+          <div className="rounded-3xl bg-charcoal-900 p-6 text-white shadow-premium md:p-10">
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-300">Contact VB Consultants</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight">Need help with your insurance claim? Contact us today.</h2>
+                <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-base text-white/75">
+                  <a href={`tel:${siteConfig.phone.replace(/[^\d+]/g, "")}`}>{siteConfig.phone}</a>
+                  <a href={siteConfig.siteUrl}>www.vbcbharat.com</a>
+                  <span>{siteConfig.address}</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Link href="/request-service?service=insurance-claim-support" className="rounded-full bg-brand-600 px-7 py-4 text-center text-base font-semibold text-white">Get Insurance Claim Help</Link>
+                <WhatsAppButton message={whatsappMessages.insurance} variant="light">Talk on WhatsApp</WhatsAppButton>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {related.length ? (
         <section className="bg-white/70 py-16">
           <div className="container-shell">
@@ -149,6 +267,18 @@ export function ServicePageTemplate({ service, heroImage }: { service: Service; 
                 <ServiceCard key={item.slug} service={item} />
               ))}
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isInsurance && !isInsuranceMain ? (
+        <section className="container-shell pt-10">
+          <div className="flex flex-col gap-4 rounded-2xl border border-charcoal-900/10 bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-charcoal-900">Need direct help with this claim?</p>
+              <p className="mt-1 text-sm text-charcoal-700">Call {siteConfig.phone} or contact VB Consultants in Bhubaneswar.</p>
+            </div>
+            <Link href="/contact" className="inline-flex justify-center rounded-full border border-brand-600 px-6 py-3 text-sm font-semibold text-brand-700">Contact Us</Link>
           </div>
         </section>
       ) : null}

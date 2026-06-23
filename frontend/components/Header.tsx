@@ -28,6 +28,10 @@ const menuGroups = [
     slugs: ["gst-registration", "gst-return-filing", "bookkeeping", "tds-return-filing", "payroll-compliance", "business-registration", "company-llp-compliance", "msme-udyam-registration", "loan-project-report", "subsidy-scheme-guidance"]
   },
   {
+    title: "Insurance Claims",
+    slugs: ["insurance-claim-documentation-support", "health-insurance-claim-help", "life-insurance-claim-assistance", "motor-insurance-claim-support", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "insurance-claim-rejected", "settlement-documentation-assistance", "nominee-claim-assistance"]
+  },
+  {
     title: "More support",
     slugs: ["business-loan-paperwork", "digital-signature-certificate-support", "pan-tan-assistance", "accounting-cleanup-support", "annual-compliance-support", "professional-tax-labour-compliance", "import-export-documentation-help", "general-tax-support"]
   }
@@ -43,6 +47,7 @@ function serviceBySlug(slug: string): HeaderServiceItem | null {
 
 function categoryTitle(category?: string) {
   const value = (category || "").toLowerCase();
+  if (value.includes("insurance")) return "Insurance Claims";
   if (value.includes("individual") || value === "itr" || value === "support") return "Individuals";
   if (value.includes("loan") || value.includes("subsidy")) return "Loans & Subsidy";
   return "Business";
@@ -58,6 +63,13 @@ function groupCmsServices(items: MenuServiceContent[]) {
     ...(grouped.get("Individuals") || []),
     { slug: "upload-documents", label: "Document Upload", heroText: "Upload files or send documents from your phone." },
     { slug: "track-status", label: "Track Status", heroText: "Check request, payment and document status." }
+  ]);
+  const insuranceMenuSlugs = new Set(["insurance-claim-documentation-support", "health-insurance-claim-help", "life-insurance-claim-assistance", "motor-insurance-claim-support", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "insurance-claim-rejected", "settlement-documentation-assistance", "nominee-claim-assistance"]);
+  const insuranceItems = services.filter((service) => insuranceMenuSlugs.has(service.slug));
+  const currentInsuranceSlugs = new Set((grouped.get("Insurance Claims") || []).map((service) => service.slug));
+  grouped.set("Insurance Claims", [
+    ...(grouped.get("Insurance Claims") || []),
+    ...insuranceItems.filter((service) => !currentInsuranceSlugs.has(service.slug))
   ]);
   return Array.from(grouped.entries()).map(([title, groupedItems]) => ({ title, items: groupedItems }));
 }
@@ -139,10 +151,10 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
             </button>
             {servicesOpen ? (
               <div
-                className="absolute left-1/2 top-full w-[780px] max-w-[calc(100vw-2rem)] -translate-x-1/2 translate-y-2 rounded-3xl border border-charcoal-900/10 bg-white p-5 opacity-100 shadow-premium transition"
+                className="absolute left-1/2 top-full w-[960px] max-w-[calc(100vw-2rem)] -translate-x-1/2 translate-y-2 rounded-3xl border border-charcoal-900/10 bg-white p-5 opacity-100 shadow-premium transition"
                 role="menu"
               >
-                <div className="grid gap-5 lg:grid-cols-3">
+                <div className="grid gap-5 lg:grid-cols-4">
                   {groupedServices.map((group) => (
                     <div key={group.title}>
                       <p className="px-3 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{group.title}</p>
@@ -179,8 +191,8 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
           <Link href="/login" className="rounded-full border border-charcoal-900/10 px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition hover:border-brand-600 hover:text-brand-700">
             Login
           </Link>
-          <Link href="/start" className="rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
-            Start ITR Filing
+          <Link href="/request-service?service=not-sure" className="rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
+            Get Help Now
           </Link>
         </div>
 

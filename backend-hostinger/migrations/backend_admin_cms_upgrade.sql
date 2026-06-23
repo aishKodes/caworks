@@ -217,10 +217,10 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name)
 ('favicon', '/favicon.svg', 'text', 'site'),
 ('apple_touch_icon', '/apple-touch-icon.png', 'text', 'site'),
 ('default_og_image', '/images/vbc/og-default-vb-consultants.png', 'text', 'site'),
-('phone', '+91 90000 00000', 'text', 'site'),
+('phone', '+91 73278 54329', 'text', 'site'),
 ('whatsapp_number', '919000000000', 'text', 'site'),
 ('support_email', 'consult@vbcbharat.com', 'text', 'site'),
-('address', 'Office address placeholder, Bhubaneswar, Odisha 751001', 'text', 'site'),
+('address', '', 'text', 'site'),
 ('business_hours', 'Monday to Saturday, 10:00 AM to 6:00 PM', 'text', 'site'),
 ('default_seo_title', 'VB Consultants | Online Tax, GST and Business Paperwork Help', 'text', 'seo'),
 ('default_seo_description', 'VB Consultants offers simple online ITR filing, GST, tax notice, loan project report and business compliance support for Indian individuals and small businesses.', 'text', 'seo')

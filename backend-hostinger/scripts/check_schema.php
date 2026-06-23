@@ -13,6 +13,7 @@ $required = [
     'quick_leads',
     'service_requests',
     'documents',
+    'uploaded_documents',
     'service_document_requirements',
     'payments',
     'manual_payment_screenshots',
@@ -56,4 +57,27 @@ if ($missing) {
     exit(1);
 }
 
-echo "Schema check passed. Required tables exist.\n";
+$requiredColumns = [
+    'users' => ['account_enabled', 'password_hash'],
+    'service_requests' => ['upload_token_hash', 'upload_token_expires_at'],
+];
+$missingColumns = [];
+foreach ($requiredColumns as $table => $columns) {
+    foreach ($columns as $column) {
+        $stmt = db()->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+        $stmt->execute([$table, $column]);
+        if (!$stmt->fetch()) {
+            $missingColumns[] = "{$table}.{$column}";
+        }
+    }
+}
+
+if ($missingColumns) {
+    echo "Missing columns:\n";
+    foreach ($missingColumns as $column) {
+        echo "- {$column}\n";
+    }
+    exit(1);
+}
+
+echo "Schema check passed. Required tables and guest-flow columns exist.\n";

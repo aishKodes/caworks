@@ -3,7 +3,7 @@ require_once __DIR__ . '/_bootstrap.php';
 
 $config = app_config();
 $installerSecret = (string) ($config['INSTALLER_SECRET'] ?? $config['installer_secret'] ?? '');
-$adminCount = admin_count('SELECT COUNT(*) c FROM admin_users');
+$adminCount = admin_count("SELECT COUNT(*) c FROM admin_users WHERE role='super_admin'");
 $completed = false;
 $error = '';
 
@@ -63,7 +63,7 @@ if ($completed): ?>
   <?php if ($error): ?><div class="notice"><?= e($error) ?></div><?php endif; ?>
   <form method="post" class="card" style="max-width:560px">
     <?= csrf_field() ?>
-    <p class="muted">Create the first <strong>super admin</strong>. This page automatically blocks itself after an admin exists.</p>
+    <p class="muted">Create the first <strong>super admin</strong>. This page automatically blocks itself after a super admin exists.</p>
     <label class="field"><span>Admin name</span><input name="full_name" required value="<?= e($_POST['full_name'] ?? '') ?>"></label>
     <label class="field"><span>Admin email</span><input name="email" type="email" required value="<?= e($_POST['email'] ?? '') ?>"></label>
     <label class="field"><span>Password</span><input name="password" type="password" minlength="10" required></label>

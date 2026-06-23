@@ -12,6 +12,7 @@ $fields = [
     'apple_touch_icon' => ['Apple touch icon path or URL', 'site', 'text'],
     'default_og_image' => ['Default OG image path or URL', 'site', 'text'],
     'phone' => ['Phone', 'site', 'text'],
+    'public_phone' => ['Public phone', 'site', 'text'],
     'whatsapp_number' => ['WhatsApp number', 'site', 'text'],
     'support_email' => ['Support email', 'site', 'text'],
     'address' => ['Address', 'site', 'text'],

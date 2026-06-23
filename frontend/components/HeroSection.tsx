@@ -1,18 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { QuickLeadForm } from "@/components/QuickLeadForm";
+import { GuestRequestForm } from "@/components/GuestRequestForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { heroServiceOptions } from "@/data/services";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
 
-const trustLine = "Upload documents · Pay securely · Track status · Get WhatsApp support";
+const trustLine = "Guest request · Secure document upload · Clear next steps · WhatsApp support";
 
 export function HeroSection({
-  title = "Tax, GST and business paperwork made simple",
-  subtitle = "From ITR filing to GST, notices, loans and business paperwork — get simple support from your phone.",
-  primaryCtaLabel = "Start ITR Filing",
-  primaryCtaHref = "/start",
-  secondaryCtaLabel = "Request Call Back",
-  secondaryCtaHref = "/quick-contact",
+  title = "Tax, GST, Business & Insurance Claim Support Made Simple",
+  subtitle = "From ITR filing and GST compliance to rejected insurance claims and business paperwork, VB Consultants helps you take the next step quickly and professionally.",
+  primaryCtaLabel = "Get Help Now",
+  primaryCtaHref = "#get-help",
+  secondaryCtaLabel = "Upload Documents",
+  secondaryCtaHref = "/upload-documents",
   image = siteConfig.images.heroPremium
 }: {
   title?: string;
@@ -25,13 +26,13 @@ export function HeroSection({
 }) {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_8%,rgba(164,22,36,0.10),transparent_28rem),linear-gradient(135deg,#fffaf7_0%,#ffffff_48%,#f7f4f1_100%)]" />
-      <div className="container-shell grid min-w-0 gap-9 pb-14 pt-10 lg:grid-cols-[0.98fr_1.02fr] lg:items-center lg:gap-12 lg:pb-20 lg:pt-16">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(135deg,#fffaf7_0%,#ffffff_52%,#f5f3f1_100%)]" />
+      <div className="container-shell grid min-w-0 gap-9 pb-14 pt-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-start lg:gap-12 lg:pb-20 lg:pt-16">
         <div className="min-w-0 max-w-[20.5rem] sm:max-w-2xl">
           <p className="inline-flex max-w-full whitespace-normal rounded-full border border-brand-600/20 bg-white/90 px-4 py-2 text-xs font-bold uppercase leading-5 tracking-[0.14em] text-brand-700 shadow-soft backdrop-blur sm:tracking-[0.18em]">
             {siteConfig.tagline}
           </p>
-          <h1 className="mt-6 break-words text-3xl font-semibold tracking-tight text-charcoal-900 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 break-words text-3xl font-semibold tracking-tight text-charcoal-900 sm:text-5xl">
             {title}
           </h1>
           <p className="mt-6 max-w-2xl break-words text-lg leading-8 text-muted">
@@ -51,21 +52,23 @@ export function HeroSection({
           <div className="mt-6 max-w-full break-words rounded-2xl border border-charcoal-900/10 bg-white/80 px-4 py-3 text-sm font-semibold leading-6 text-charcoal-700 shadow-sm backdrop-blur">
             {trustLine}
           </div>
-          <div className="mt-6 max-w-md">
-            <QuickLeadForm sourcePage="homepage-hero" compact />
-          </div>
         </div>
 
-        <div className="relative min-w-0 rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
-          <div className="relative aspect-[16/10] overflow-hidden rounded-[1.55rem] bg-charcoal-900">
-            <Image
-              src={image}
-              alt="Indian family using phone for tax and business paperwork support"
-              fill
-              priority
-              sizes="(min-width: 1024px) 46vw, 100vw"
-              className="object-cover object-[62%_center]"
-            />
+        <div className="min-w-0 space-y-5">
+          <div className="relative min-w-0 rounded-[2rem] border border-charcoal-900/10 bg-white p-2 shadow-premium">
+            <div className="relative aspect-[16/10] overflow-hidden rounded-[1.55rem] bg-charcoal-900">
+              <Image
+                src={image}
+                alt="Indian family using phone for tax, claim and business paperwork support"
+                fill
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover object-[62%_center]"
+              />
+            </div>
+          </div>
+          <div id="get-help" className="scroll-mt-28">
+            <GuestRequestForm defaultService="not-sure" variant="hero" options={heroServiceOptions} />
           </div>
         </div>
       </div>

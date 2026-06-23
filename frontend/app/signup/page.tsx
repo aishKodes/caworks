@@ -17,7 +17,7 @@ export default function SignupPage() {
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-600">Create account</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-charcoal-900 md:text-5xl">Get your Tax Help ID.</h1>
-        <p className="mt-5 text-lg leading-8 text-muted">No OTP. Create account with name, phone, email and password.</p>
+        <p className="mt-5 text-lg leading-8 text-muted">No OTP. Use your name, phone and a simple password or PIN. Email is optional.</p>
       </div>
       <SignupForm />
     </section>

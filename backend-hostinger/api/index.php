@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+ini_set('display_errors', '0');
+ini_set('html_errors', '0');
+
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/response.php';
@@ -67,6 +70,7 @@ function route(string $method, string $path): void {
     if ($method === 'POST' && $path === '/login') handle_login();
     if ($method === 'POST' && $path === '/logout') handle_logout();
     if ($method === 'GET' && $path === '/me') handle_me();
+    if ($method === 'POST' && $path === '/guest-request') handle_guest_request();
     if ($method === 'POST' && $path === '/service-request') handle_service_request();
     if ($method === 'GET' && $path === '/my-requests') handle_my_requests();
     if ($method === 'GET' && preg_match('#^/request/(\d+)$#', $path, $m)) handle_request_detail((int) $m[1]);
@@ -142,6 +146,79 @@ function db_column_exists(string $table, string $column): bool {
     return $cache[$key];
 }
 
+function best_effort(callable $callback): void {
+    try {
+        $callback();
+    } catch (Throwable $ignored) {
+    }
+}
+
+function unique_public_code(string $prefix, string $table, string $column): string {
+    do {
+        $code = generate_code($prefix);
+        $check = db()->prepare("SELECT id FROM {$table} WHERE {$column} = ? LIMIT 1");
+        $check->execute([$code]);
+    } while ($check->fetch());
+    return $code;
+}
+
+function public_user_summary(array $user): array {
+    return [
+        'id' => (int) $user['id'],
+        'tax_help_id' => (string) $user['tax_help_id'],
+        'full_name' => (string) $user['full_name'],
+        'name' => (string) $user['full_name'],
+        'phone' => (string) $user['phone'],
+        'email' => (string) ($user['email'] ?? ''),
+    ];
+}
+
+function create_request_upload_access(int $requestId): array {
+    $rawToken = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    $expiresAt = (new DateTimeImmutable('+30 days'))->format('Y-m-d H:i:s');
+    db()->prepare('UPDATE service_requests SET upload_token_hash=?, upload_token_expires_at=? WHERE id=?')->execute([
+        hash('sha256', $rawToken),
+        $expiresAt,
+        $requestId,
+    ]);
+    return ['token' => $rawToken, 'expires_at' => $expiresAt];
+}
+
+function guest_request_user(string $name, string $phone, string $email): array {
+    $stmt = db()->prepare('SELECT * FROM users WHERE phone=? LIMIT 1');
+    $stmt->execute([$phone]);
+    $existing = $stmt->fetch();
+    if ($existing) {
+        return $existing;
+    }
+
+    if ($email !== '') {
+        $emailCheck = db()->prepare('SELECT id FROM users WHERE email=? LIMIT 1');
+        $emailCheck->execute([$email]);
+        if ($emailCheck->fetch()) {
+            $email = '';
+        }
+    }
+
+    $taxId = unique_public_code('TAX', 'users', 'tax_help_id');
+    $columns = ['tax_help_id', 'full_name', 'phone', 'email', 'password_hash'];
+    $values = [$taxId, $name, $phone, $email !== '' ? $email : null, null];
+    if (db_column_exists('users', 'account_enabled')) {
+        $columns[] = 'account_enabled';
+        $values[] = 0;
+    }
+    $placeholders = implode(',', array_fill(0, count($columns), '?'));
+    db()->prepare('INSERT INTO users (' . implode(',', $columns) . ') VALUES (' . $placeholders . ')')->execute($values);
+    return [
+        'id' => (int) db()->lastInsertId(),
+        'tax_help_id' => $taxId,
+        'full_name' => $name,
+        'phone' => $phone,
+        'email' => $email,
+        'account_enabled' => 0,
+    ];
+}
+
 function handle_quick_lead(): void {
     rate_limit('quick_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 8, 300);
     $data = read_json();
@@ -201,56 +278,82 @@ function handle_signup(): void {
     if (clean_string($data['honeypot'] ?? '') !== '') ok([], 'Thank you.');
     $fullName = clean_string($data['fullName'] ?? $data['name'] ?? '', 160);
     $data['fullName'] = $fullName;
-    require_fields($data, ['fullName', 'phone', 'email', 'password']);
+    require_fields($data, ['fullName', 'phone', 'password']);
     $phone = clean_string($data['phone'], 30);
-    $email = strtolower(clean_string($data['email'], 180));
+    $email = strtolower(clean_string($data['email'] ?? '', 180));
     $password = (string) $data['password'];
-    $confirm = (string) ($data['confirm_password'] ?? $data['confirmPassword'] ?? $password);
-    if (!valid_phone($phone) || !valid_email($email) || strlen($password) < 8 || $password !== $confirm) {
-        fail('Please check phone, email and password.', 422);
+    $minimumPasswordLength = max(4, (int) (app_config()['MIN_PASSWORD_LENGTH'] ?? 4));
+    if (!valid_phone($phone)) {
+        fail('Please enter a valid phone number.', 422);
+    }
+    if ($email !== '' && !valid_email($email)) {
+        fail('Please enter a valid email address or leave it blank.', 422);
+    }
+    if (strlen($password) < $minimumPasswordLength) {
+        fail("Password or PIN must be at least {$minimumPasswordLength} characters.", 422);
     }
 
-    $existing = db()->prepare('SELECT id FROM users WHERE phone = ? OR email = ? LIMIT 1');
-    $existing->execute([$phone, $email]);
-    if ($existing->fetch()) {
-        fail('An account already exists with this phone/email. Please login to continue.', 409);
+    $existing = db()->prepare('SELECT * FROM users WHERE phone = ? LIMIT 1');
+    $existing->execute([$phone]);
+    $existingUser = $existing->fetch();
+    $emailOwner = null;
+    if ($email !== '') {
+        $emailCheck = db()->prepare('SELECT id, phone FROM users WHERE email = ? LIMIT 1');
+        $emailCheck->execute([$email]);
+        $emailOwner = $emailCheck->fetch();
+        if ($emailOwner && (!$existingUser || (int) $emailOwner['id'] !== (int) $existingUser['id'])) {
+            fail('An account already exists with this email. Please login to continue.', 409);
+        }
     }
 
-    do {
-        $taxId = generate_code('TAX');
-        $check = db()->prepare('SELECT id FROM users WHERE tax_help_id = ? LIMIT 1');
-        $check->execute([$taxId]);
-    } while ($check->fetch());
-
-    try {
-        $stmt = db()->prepare('INSERT INTO users (tax_help_id, full_name, phone, email, password_hash) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$taxId, $fullName, $phone, $email, password_hash($password, PASSWORD_DEFAULT)]);
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23000') {
+    if ($existingUser) {
+        $accountEnabled = !db_column_exists('users', 'account_enabled') || (int) ($existingUser['account_enabled'] ?? 1) === 1;
+        if ($accountEnabled && !empty($existingUser['password_hash'])) {
             fail('An account already exists with this phone/email. Please login to continue.', 409);
         }
-        throw $e;
+        $emailValue = $email !== '' ? $email : ($existingUser['email'] ?: null);
+        db()->prepare('UPDATE users SET full_name=?, email=?, password_hash=?, account_enabled=1, active=1, updated_at=NOW() WHERE id=?')->execute([
+            $fullName,
+            $emailValue,
+            password_hash($password, PASSWORD_DEFAULT),
+            (int) $existingUser['id'],
+        ]);
+        $userId = (int) $existingUser['id'];
+        $taxId = (string) $existingUser['tax_help_id'];
+    } else {
+        $taxId = unique_public_code('TAX', 'users', 'tax_help_id');
+        try {
+            $stmt = db()->prepare('INSERT INTO users (tax_help_id, full_name, phone, email, password_hash, account_enabled) VALUES (?, ?, ?, ?, ?, 1)');
+            $stmt->execute([$taxId, $fullName, $phone, $email !== '' ? $email : null, password_hash($password, PASSWORD_DEFAULT)]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                fail('An account already exists with this phone/email. Please login to continue.', 409);
+            }
+            throw $e;
+        }
+        $userId = (int) db()->lastInsertId();
     }
-    $userId = (int) db()->lastInsertId();
     $user = ['id' => $userId, 'tax_help_id' => $taxId, 'full_name' => $fullName, 'name' => $fullName, 'phone' => $phone, 'email' => $email];
     $token = create_user_session($user);
-    queueWhatsAppMessage($userId, null, $phone, 'signup', whatsapp_template('signup', ['name' => $user['full_name'], 'tax_id' => $taxId]));
-    email_admin_template(
+    best_effort(fn() => queueWhatsAppMessage($userId, null, $phone, 'signup', whatsapp_template('signup', ['name' => $user['full_name'], 'tax_id' => $taxId])));
+    best_effort(fn() => email_admin_template(
         'signup_admin',
-        ['name' => $user['full_name'], 'phone' => $phone, 'email' => $email, 'tax_id' => $taxId],
+        ['name' => $user['full_name'], 'phone' => $phone, 'email' => $email ?: 'Not shared', 'tax_id' => $taxId],
         'New signup',
         "A new user signed up.\n\nName: {$user['full_name']}\nTax Help ID: {$taxId}",
         $userId
-    );
-    send_template_email(
-        $email,
-        'signup_user',
-        ['name' => $user['full_name'], 'tax_id' => $taxId],
-        'Your Tax Help ID',
-        "Hello {$user['full_name']},\n\nYour Tax Help ID is {$taxId}.\nLogin to upload documents and track requests.",
-        ['related_user_id' => $userId]
-    );
-    ok(['token' => $token, 'user' => $user], 'Signup complete.');
+    ));
+    if ($email !== '') {
+        best_effort(fn() => send_template_email(
+            $email,
+            'signup_user',
+            ['name' => $user['full_name'], 'tax_id' => $taxId],
+            'Your Tax Help ID',
+            "Hello {$user['full_name']},\n\nYour Tax Help ID is {$taxId}.\nLogin to upload documents and track requests.",
+            ['related_user_id' => $userId]
+        ));
+    }
+    ok(['user' => $user], 'Account created successfully.');
 }
 
 function handle_login(): void {
@@ -261,12 +364,17 @@ function handle_login(): void {
     $stmt = db()->prepare('SELECT * FROM users WHERE phone = ? OR email = ? OR tax_help_id = ? LIMIT 1');
     $stmt->execute([$id, strtolower($id), strtoupper($id)]);
     $user = $stmt->fetch();
-    if (!$user || !password_verify((string) $data['password'], $user['password_hash'])) {
+    if (
+        !$user
+        || (db_column_exists('users', 'account_enabled') && !(int) ($user['account_enabled'] ?? 0))
+        || empty($user['password_hash'])
+        || !password_verify((string) $data['password'], (string) $user['password_hash'])
+    ) {
         fail('Invalid login details.', 401);
     }
     $summary = ['id' => (int) $user['id'], 'tax_help_id' => $user['tax_help_id'], 'full_name' => $user['full_name'], 'name' => $user['full_name'], 'phone' => $user['phone'], 'email' => $user['email']];
     $token = create_user_session($summary);
-    ok(['token' => $token, 'user' => $summary], 'Login complete.');
+    ok(['user' => $summary], 'Login complete.');
 }
 
 function handle_logout(): void {
@@ -280,6 +388,68 @@ function handle_me(): void {
     $user = require_user();
     $user['name'] = $user['full_name'] ?? '';
     ok($user);
+}
+
+function handle_guest_request(): void {
+    rate_limit('guest_request_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 600);
+    $data = read_json();
+    if (clean_string($data['honeypot'] ?? '') !== '') ok([], 'Thank you.');
+    require_fields($data, ['name', 'phone', 'service_slug']);
+
+    $name = clean_string($data['name'], 160);
+    $phone = clean_string($data['phone'], 30);
+    $email = strtolower(clean_string($data['email'] ?? '', 180));
+    $serviceSlug = clean_string($data['service_slug'], 120);
+    $message = clean_string($data['message'] ?? '', 2000);
+    if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
+    if ($email !== '' && !valid_email($email)) fail('Please enter a valid email address or leave it blank.', 422);
+
+    $user = guest_request_user($name, $phone, $email);
+    $requestCode = unique_public_code('REQ', 'service_requests', 'request_code');
+    db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, details) VALUES (?, ?, ?, ?, ?)')->execute([
+        $requestCode,
+        (int) $user['id'],
+        $serviceSlug,
+        'Request received',
+        $message,
+    ]);
+    $requestId = (int) db()->lastInsertId();
+    $access = create_request_upload_access($requestId);
+    db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([
+        $requestId,
+        'Request received',
+        'Request received. Documents can be uploaded now or later.',
+    ]);
+    best_effort(fn() => db()->prepare('INSERT INTO request_status_history (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([
+        $requestId,
+        'Request received',
+        'Request received. Documents can be uploaded now or later.',
+    ]));
+    best_effort(fn() => email_admin_template(
+        'service_request_admin',
+        ['name' => $name, 'tax_id' => $user['tax_help_id'], 'request_id' => $requestCode, 'service_name' => $serviceSlug],
+        'New guest service request',
+        "A new guest request was created.\n\nRequest ID: {$requestCode}\nPhone: {$phone}\nService: {$serviceSlug}",
+        (int) $user['id'],
+        $requestId
+    ));
+    best_effort(fn() => queueWhatsAppMessage(
+        (int) $user['id'],
+        $requestId,
+        $phone,
+        'guest_request',
+        "Hello {$name}, your request {$requestCode} has been received. You can upload documents using the secure link."
+    ));
+
+    $frontendUrl = rtrim((string) (app_config()['frontend_url'] ?? 'https://www.vbcbharat.com'), '/');
+    $uploadPath = '/upload-documents?request=' . rawurlencode($requestCode) . '&token=' . rawurlencode($access['token']) . '&service=' . rawurlencode($serviceSlug);
+    ok([
+        'request_id' => $requestCode,
+        'request_db_id' => $requestId,
+        'upload_token' => $access['token'],
+        'upload_url' => $frontendUrl . $uploadPath,
+        'upload_path' => $uploadPath,
+    ], 'Thank you. Your request has been received. Our team will contact you on phone or WhatsApp.');
 }
 
 function handle_service_request(): void {
@@ -339,9 +509,35 @@ function handle_request_detail(int $id): void {
 }
 
 function handle_upload_documents(): void {
-    $user = require_user();
+    $user = optional_user();
     $requestId = (int) ($_POST['request_id'] ?? 0);
-    if ($requestId > 0) {
+    $requestCode = clean_string($_POST['request_code'] ?? $_POST['request'] ?? '', 40);
+    $uploadToken = clean_string($_POST['upload_token'] ?? $_POST['token'] ?? '', 200);
+    $guestTokenAuthorized = false;
+    if (!$user && $requestCode !== '' && $uploadToken !== '') {
+        $tokenHash = hash('sha256', $uploadToken);
+        $guest = db()->prepare('
+            SELECT sr.id request_id, u.id, u.tax_help_id, u.full_name, u.phone, u.email
+            FROM service_requests sr
+            JOIN users u ON u.id=sr.user_id
+            WHERE sr.request_code=?
+              AND sr.upload_token_hash=?
+              AND (sr.upload_token_expires_at IS NULL OR sr.upload_token_expires_at > NOW())
+            LIMIT 1
+        ');
+        $guest->execute([$requestCode, $tokenHash]);
+        $guestRow = $guest->fetch();
+        if ($guestRow) {
+            $requestId = (int) $guestRow['request_id'];
+            unset($guestRow['request_id']);
+            $user = $guestRow;
+            $guestTokenAuthorized = true;
+        }
+    }
+    if (!$user) {
+        fail('Please use the secure upload link from your request or login first.', 401);
+    }
+    if ($requestId > 0 && !$guestTokenAuthorized) {
         $check = db()->prepare('SELECT id FROM service_requests WHERE id = ? AND user_id = ?');
         $check->execute([$requestId, $user['id']]);
         if (!$check->fetch()) fail('Request not found.', 404);
@@ -389,21 +585,20 @@ function handle_upload_documents(): void {
     $documentLabels = array_values(is_array($_POST['document_labels'] ?? null) ? $_POST['document_labels'] : [$_POST['document_label'] ?? $_POST['document_type'] ?? 'Document']);
     $saved = [];
     $errors = [];
-    $hasDocumentLabel = db_column_exists('documents', 'document_label');
     foreach ($files as $index => $file) {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) continue;
         try {
             $info = save_uploaded_file($file, 'doc');
             $type = clean_string($documentTypes[$index] ?? 'document', 120);
             $label = clean_string($documentLabels[$index] ?? $type, 180);
-            if ($hasDocumentLabel) {
-                $stmt = db()->prepare('INSERT INTO documents (user_id, request_id, document_type, document_label, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$user['id'], $requestId ?: null, $type, $label, $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']]);
-            } else {
-                $stmt = db()->prepare('INSERT INTO documents (user_id, request_id, document_type, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$user['id'], $requestId ?: null, $label ?: $type, $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']]);
-            }
+            $values = [$user['id'], $requestId ?: null, $type, $label, $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']];
+            $stmt = db()->prepare('INSERT INTO uploaded_documents (user_id, request_id, document_type, document_label, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute($values);
+            $uploadedDocumentId = (int) db()->lastInsertId();
+            $stmt = db()->prepare('INSERT INTO documents (user_id, request_id, document_type, document_label, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute($values);
             $saved[] = [
+                'id' => $uploadedDocumentId,
                 'name' => $info['original_name'],
                 'document_type' => $type,
                 'document_label' => $label,
@@ -422,7 +617,7 @@ function handle_upload_documents(): void {
         db()->prepare('UPDATE service_requests SET status = ? WHERE id = ?')->execute(['Documents received', $requestId]);
         db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$requestId, 'Documents received', 'Documents uploaded.']);
     }
-    email_admin_template(
+    best_effort(fn() => email_admin_template(
         'document_upload_admin',
         [
             'name' => $user['full_name'],
@@ -435,15 +630,17 @@ function handle_upload_documents(): void {
         "Documents were uploaded.\n\nUser: {$user['tax_help_id']}",
         (int) $user['id'],
         $requestId ?: null
-    );
-    send_template_email(
-        $user['email'],
-        'document_upload_user',
-        ['name' => $user['full_name'], 'request_id' => $requestId ?: 'new request', 'service_name' => $serviceLabel ?: 'your service'],
-        'Documents received',
-        "Hello {$user['full_name']},\n\nYour documents have been received. We will check them and update your request status.",
-        ['related_user_id' => (int) $user['id'], 'related_request_id' => $requestId ?: null]
-    );
+    ));
+    if (!empty($user['email']) && valid_email((string) $user['email'])) {
+        best_effort(fn() => send_template_email(
+            $user['email'],
+            'document_upload_user',
+            ['name' => $user['full_name'], 'request_id' => $requestCode ?: ($requestId ?: 'new request'), 'service_name' => $serviceLabel ?: 'your service'],
+            'Documents received',
+            "Hello {$user['full_name']},\n\nYour documents have been received. We will check them and update your request status.",
+            ['related_user_id' => (int) $user['id'], 'related_request_id' => $requestId ?: null]
+        ));
+    }
     $message = $errors ? 'Some files uploaded. Please check failed files and try again.' : 'Documents uploaded.';
     ok(['files' => $saved, 'errors' => $errors, 'request' => ['id' => $requestId]], $message);
 }
@@ -545,7 +742,15 @@ function handle_razorpay_webhook(): void {
 
 function handle_content_site(): void {
     cms_public_cache_headers();
-    ok(cms_settings());
+    $settings = cms_settings();
+    $config = app_config();
+    if (trim((string) ($settings['address'] ?? '')) === '') {
+        $settings['address'] = trim((string) ($config['office_address'] ?? ''));
+    }
+    if (trim((string) ($settings['phone'] ?? '')) === '') {
+        $settings['phone'] = trim((string) ($config['public_phone'] ?? '+91 73278 54329'));
+    }
+    ok($settings);
 }
 
 function handle_content_homepage(): void {
@@ -700,7 +905,43 @@ function handle_admin_pricing_post(): void {
         $stmt->execute([clean_string($data['serviceName'], 180), clean_string($data['amountText'], 80), clean_string($data['note'] ?? '', 2000), json_encode($data['features'] ?? []), (int) ($data['visibleOrder'] ?? 0), !empty($data['active']) ? 1 : 0]);
     }
     audit_log((int) $admin['id'], null, 'api_pricing_saved', 'Pricing saved.');
-    cms_revalidate_paths(['/pricing', '/', '/sitemap.xml']);
+    cms_revalidate_paths([
+        '/pricing',
+        '/',
+        '/salary-itr-filing',
+        '/itr-1-filing',
+        '/itr-2-capital-gains-filing',
+        '/freelancer-business-itr',
+        '/gst-services',
+        '/gst-registration',
+        '/gst-return-filing',
+        '/bookkeeping',
+        '/tds-return-filing',
+        '/payroll-compliance',
+        '/tax-notice-help',
+        '/business-registration',
+        '/msme-udyam-registration',
+        '/loan-project-report',
+        '/subsidy-scheme-guidance',
+        '/insurance-claim-support',
+        '/insurance-claim-documentation-support',
+        '/insurance-claim-rejected',
+        '/health-insurance-claim-help',
+        '/life-insurance-claim-assistance',
+        '/motor-insurance-claim-support',
+        '/personal-accident-insurance-claim',
+        '/claim-form-preparation-support',
+        '/insurance-claim-follow-up',
+        '/settlement-documentation-assistance',
+        '/nominee-claim-assistance',
+        '/mediclaim-reimbursement-help',
+        '/cashless-claim-denied',
+        '/life-insurance-claim-dispute',
+        '/motor-insurance-claim-dispute',
+        '/property-insurance-claim-help',
+        '/insurance-legal-escalation-support',
+        '/sitemap.xml'
+    ]);
     ok([], 'Pricing saved.');
 }
 

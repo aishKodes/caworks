@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CTASection } from "@/components/CTASection";
 import { DocumentUploadForm } from "@/components/DocumentUploadForm";
+import { GuestRequestForm } from "@/components/GuestRequestForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
 import { buildMetadata } from "@/lib/seo";
@@ -11,13 +12,18 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildMetadata({
   title: "Upload Documents",
-  description: "Upload tax, GST and business paperwork documents securely.",
+  description: "Upload tax, GST, insurance claim and business paperwork documents securely.",
   path: "/upload-documents",
   noIndex: true
 });
 
-export default async function UploadDocumentsPage({ searchParams }: { searchParams: Promise<{ service?: string; requestId?: string }> }) {
+export default async function UploadDocumentsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ service?: string; requestId?: string; request?: string; token?: string }>;
+}) {
   const params = await searchParams;
+  const hasGuestAccess = Boolean(params.request && params.token);
   return (
     <>
       <Breadcrumbs items={[{ name: "Upload Documents", href: "/upload-documents" }]} />
@@ -33,7 +39,17 @@ export default async function UploadDocumentsPage({ searchParams }: { searchPara
             <Image src={siteConfig.images.mobileUpload} alt="Uploading documents from a phone" width={900} height={650} priority className="aspect-[4/3] h-auto w-full object-cover object-center" />
           </div>
         </div>
-        <DocumentUploadForm checklistType="salary" initialServiceSlug={params.service} requestId={params.requestId} />
+        {hasGuestAccess ? (
+          <DocumentUploadForm
+            checklistType="salary"
+            initialServiceSlug={params.service}
+            requestId={params.requestId}
+            requestCode={params.request}
+            uploadToken={params.token}
+          />
+        ) : (
+          <GuestRequestForm defaultService={params.service || "salary-itr-filing"} intent="upload_documents" />
+        )}
       </section>
       <CTASection className="pb-16" />
     </>

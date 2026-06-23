@@ -16,6 +16,9 @@ export type HomepageContent = {
   secondaryCtaHref?: string;
   finalCtaTitle?: string;
   finalCtaDescription?: string;
+  insuranceTitle?: string;
+  insuranceSubtitle?: string;
+  insuranceProblems?: string[];
   trustBadges?: Array<{ title: string; text: string }>;
   faqs?: FAQItem[];
   testimonials?: ReadonlyArray<{ name: string; role?: string; context?: string; quote: string; image?: string; avatar?: string }>;
@@ -74,6 +77,11 @@ function cleanPublicText(value: string | undefined, fallback: string) {
   return (value || fallback)
     .replaceAll("Tax, GST and business paperwork made simple for Indian families and businesses.", "Tax, GST and business paperwork made simple")
     .replaceAll("File ITR, get GST help, upload documents, pay securely and track your request — all from your phone.", "From ITR filing to GST, notices, loans and business paperwork — get simple support from your phone.")
+    .replaceAll("Tax, GST and business paperwork made simple", "Tax, GST, Business & Insurance Claim Support Made Simple")
+    .replaceAll("From ITR filing to GST, notices, loans and business paperwork — get simple support from your phone.", "From ITR filing and GST compliance to rejected insurance claims and business paperwork, VB Consultants helps you take the next step quickly and professionally.")
+    .replaceAll("Start ITR filing, upload documents, or enter your phone number. We will guide you in simple steps.", "Tell us whether you need tax, GST, insurance claim, loan or business paperwork support. We will guide the next step.")
+    .replaceAll("Insurance company rejected or delayed your claim?", "Facing Problems with an Insurance Claim?")
+    .replaceAll("Rejected does not always mean finished. Share your policy copy, rejection letter and claim papers. Our team helps review the issue, prepare replies, escalate the matter and coordinate legal action where required.", "Don’t worry. We help you with insurance claim documentation, claim processing support, follow-up assistance and escalation support where required.")
     .replaceAll("Vedanath Business Consultants", siteConfig.name)
     .replaceAll("Veedanath Business Consultants", siteConfig.name)
     .replaceAll("CA-reviewed", "professionally checked")
@@ -99,6 +107,21 @@ function cleanImagePath(value: string | undefined, fallback: string) {
   return oldPlaceholderImageFragments.some((fragment) => value.includes(fragment)) ? fallback : value;
 }
 
+function cleanAddress(value: string | undefined) {
+  const address = (value || "").trim();
+  if (!address) return "";
+  const placeholderPatterns = [
+    /your address here/i,
+    /add your address/i,
+    /office address placeholder/i,
+    /rayagada placeholder/i,
+    /123 business street/i,
+    /sample address/i,
+    /put address here/i
+  ];
+  return placeholderPatterns.some((pattern) => pattern.test(address)) ? "" : address;
+}
+
 export async function getHomepageContent(): Promise<Required<HomepageContent>> {
   const [remote, cmsFaqs, cmsTestimonials] = await Promise.all([
     fetchCms<HomepageContent>("/api/content/homepage"),
@@ -106,15 +129,18 @@ export async function getHomepageContent(): Promise<Required<HomepageContent>> {
     fetchCms<HomepageContent["testimonials"]>("/api/content/testimonials")
   ]);
   return {
-    heroTitle: cleanPublicText(remote?.heroTitle, "Tax, GST and business paperwork made simple"),
-    heroSubtitle: cleanPublicText(remote?.heroSubtitle, "From ITR filing to GST, notices, loans and business paperwork — get simple support from your phone."),
+    heroTitle: cleanPublicText(remote?.heroTitle, "Tax, GST, Business & Insurance Claim Support Made Simple"),
+    heroSubtitle: cleanPublicText(remote?.heroSubtitle, "From ITR filing and GST compliance to rejected insurance claims and business paperwork, VB Consultants helps you take the next step quickly and professionally."),
     heroImage: cleanImagePath(remote?.heroImage, siteConfig.images.heroPremium),
-    primaryCtaLabel: cleanPublicText(remote?.primaryCtaLabel, "Start ITR Filing"),
-    primaryCtaHref: remote?.primaryCtaHref || "/start",
-    secondaryCtaLabel: cleanPublicText(remote?.secondaryCtaLabel, "Request Call Back"),
-    secondaryCtaHref: remote?.secondaryCtaHref || "/quick-contact",
-    finalCtaTitle: cleanPublicText(remote?.finalCtaTitle, "Need help today?"),
-    finalCtaDescription: cleanPublicText(remote?.finalCtaDescription, "Start ITR filing, upload documents, or enter your phone number. We will guide you in simple steps."),
+    primaryCtaLabel: remote?.primaryCtaLabel === "Start ITR Filing" ? "Get Help Now" : cleanPublicText(remote?.primaryCtaLabel, "Get Help Now"),
+    primaryCtaHref: remote?.primaryCtaHref === "/start" ? "#get-help" : remote?.primaryCtaHref || "#get-help",
+    secondaryCtaLabel: remote?.secondaryCtaLabel === "Request Call Back" ? "Upload Documents" : cleanPublicText(remote?.secondaryCtaLabel, "Upload Documents"),
+    secondaryCtaHref: remote?.secondaryCtaHref === "/quick-contact" ? "/upload-documents" : remote?.secondaryCtaHref || "/upload-documents",
+    finalCtaTitle: cleanPublicText(remote?.finalCtaTitle, "Need practical help today?"),
+    finalCtaDescription: cleanPublicText(remote?.finalCtaDescription, "Tell us whether you need tax, GST, insurance claim, loan or business paperwork support. We will guide the next step."),
+    insuranceTitle: cleanPublicText(remote?.insuranceTitle, "Facing Problems with an Insurance Claim?"),
+    insuranceSubtitle: cleanPublicText(remote?.insuranceSubtitle, "Don’t worry. We help you with insurance claim documentation, claim processing support, follow-up assistance and escalation support where required."),
+    insuranceProblems: remote?.insuranceProblems?.length ? remote.insuranceProblems : [],
     trustBadges: remote?.trustBadges || [],
     faqs: remote?.faqs?.length ? remote.faqs : cmsFaqs?.length ? cmsFaqs : homeFaqs,
     testimonials: remote?.testimonials?.length ? remote.testimonials : cmsTestimonials?.length ? cmsTestimonials : testimonials,
@@ -123,7 +149,51 @@ export async function getHomepageContent(): Promise<Required<HomepageContent>> {
 }
 
 export async function getPricingContent(): Promise<PricingContent> {
-  return (await fetchCms<PricingContent>("/api/content/pricing", { revalidate: 300, timeoutMs: 2500 })) || [...pricingPlans];
+  return (await fetchCms<PricingContent>("/api/content/pricing", { revalidate: 300, timeoutMs: 900 })) || [...pricingPlans];
+}
+
+const pricingServiceNames: Record<string, string[]> = {
+  "insurance-claim-support": ["insurance claim documentation support", "claim form preparation & submission support", "claim follow-up support", "claim rejection review", "settlement documentation assistance"],
+  "insurance-claim-documentation-support": ["insurance claim documentation support"],
+  "insurance-claim-rejected": ["claim rejection review"],
+  "health-insurance-claim-help": ["health insurance claim assistance"],
+  "life-insurance-claim-assistance": ["life insurance claim assistance"],
+  "motor-insurance-claim-support": ["motor insurance claim support"],
+  "personal-accident-insurance-claim": ["personal accident claim assistance"],
+  "claim-form-preparation-support": ["claim form preparation & submission support"],
+  "insurance-claim-follow-up": ["claim follow-up support"],
+  "settlement-documentation-assistance": ["settlement documentation assistance"],
+  "nominee-claim-assistance": ["nominee claim assistance"],
+  "mediclaim-reimbursement-help": ["health insurance claim assistance"],
+  "cashless-claim-denied": ["health insurance claim assistance"],
+  "life-insurance-claim-dispute": ["life insurance claim assistance"],
+  "motor-insurance-claim-dispute": ["motor insurance claim support"],
+  "property-insurance-claim-help": ["insurance claim documentation support"],
+  "insurance-legal-escalation-support": ["claim rejection review"],
+  "salary-itr-filing": ["salary itr", "salary itr with review"],
+  "itr-1-filing": ["salary itr", "salary itr with review"],
+  "itr-2-capital-gains-filing": ["itr-2 / capital gains"],
+  "freelancer-business-itr": ["freelancer / business itr"],
+  "gst-return-filing": ["gst filing"],
+  "gst-services": ["gst filing", "gst registration"],
+  "gst-registration": ["gst registration"],
+  bookkeeping: ["bookkeeping"],
+  "tds-return-filing": ["tds return filing"],
+  "payroll-compliance": ["payroll compliance"],
+  "tax-notice-help": ["tax notice help"],
+  "business-registration": ["business registration"],
+  "msme-udyam-registration": ["msme / udyam registration"],
+  "loan-project-report": ["loan project report"],
+  "subsidy-scheme-guidance": ["subsidy scheme guidance"]
+};
+
+export async function getServicePricingNote(slug: string): Promise<string | null> {
+  const names = pricingServiceNames[slug] || [];
+  if (!names.length) return null;
+  const pricing = await getPricingContent();
+  const matches = pricing.filter((item) => names.includes(item.name.trim().toLowerCase()));
+  if (!matches.length) return null;
+  return matches.map((item) => `${item.name}: ${item.price}`).join(" · ");
 }
 
 export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettingsContent, "phone" | "support_email" | "address" | "footer_text">>> {
@@ -131,8 +201,9 @@ export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettin
   return {
     phone: remote?.phone || siteConfig.phone,
     support_email: remote?.support_email || siteConfig.email,
-    address: remote?.address || siteConfig.address,
-    footer_text: remote?.footer_text || "Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance, built for clear mobile steps."
+    address: cleanAddress(remote?.address) || cleanAddress(siteConfig.address),
+    footer_text: cleanPublicText(remote?.footer_text, "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance, built for clear mobile steps.")
+      .replace("Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance.", "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance.")
   };
 }
 
@@ -230,7 +301,10 @@ function cmsBlogToPost(post: CmsBlogPost): BlogPost & { contentHtml?: string } {
 
 export async function getBlogContent(): Promise<Array<BlogPost & { contentHtml?: string }>> {
   const remote = await fetchCms<CmsBlogPost[]>("/api/content/blog");
-  return remote?.length ? remote.map(cmsBlogToPost) : blogPosts;
+  if (!remote?.length) return blogPosts;
+  const remotePosts = remote.map(cmsBlogToPost);
+  const remoteSlugs = new Set(remotePosts.map((post) => post.slug));
+  return [...remotePosts, ...blogPosts.filter((post) => !remoteSlugs.has(post.slug))];
 }
 
 export async function getBlogPostContent(slug: string): Promise<(BlogPost & { contentHtml?: string }) | null> {
@@ -259,6 +333,7 @@ export async function getLocalPageContent(slug: string): Promise<LocalPageConten
 
 function normalizeCategory(category?: string): Service["category"] {
   const value = (category || "").toLowerCase();
+  if (value.includes("insurance")) return "insurance";
   if (value.includes("gst")) return "gst";
   if (value.includes("loan")) return "loan";
   if (value.includes("business") || value.includes("compliance")) return "business";
