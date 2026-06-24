@@ -17,10 +17,12 @@ export async function ContactSection() {
             <p className="font-semibold text-charcoal-900">Phone</p>
             <Link href={`tel:${settings.phone.replace(/[^\d+]/g, "")}`} className="hover:text-brand-700">{settings.phone}</Link>
           </div>
-          <div>
-            <p className="font-semibold text-charcoal-900">Email</p>
-            <Link href={`mailto:${settings.support_email}`} className="hover:text-brand-700">{settings.support_email}</Link>
-          </div>
+          {settings.public_email ? (
+            <div>
+              <p className="font-semibold text-charcoal-900">Email</p>
+              <Link href={`mailto:${settings.public_email}`} className="hover:text-brand-700">{settings.public_email}</Link>
+            </div>
+          ) : null}
           <div>
             <p className="font-semibold text-charcoal-900">Website</p>
             <Link href={siteConfig.siteUrl} className="hover:text-brand-700">www.vbcbharat.com</Link>

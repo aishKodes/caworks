@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/validation.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/rate_limit.php';
 require_once __DIR__ . '/../includes/upload.php';
-require_once __DIR__ . '/../includes/mail.php';
+require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/razorpay.php';
 require_once __DIR__ . '/../includes/whatsapp.php';
 require_once __DIR__ . '/../includes/audit.php';
@@ -19,14 +19,19 @@ require_once __DIR__ . '/../includes/cms.php';
 
 $config = app_config();
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin && $origin === $config['allowed_origin']) {
+$allowedOrigin = rtrim((string) ($config['allowed_origin'] ?? 'https://www.vbcbharat.com'), '/');
+if ($origin && rtrim($origin, '/') === $allowedOrigin) {
     header('Access-Control-Allow-Origin: ' . $origin);
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
+} elseif ($origin !== '') {
+    log_auth_issue('CORS blocked request from origin: ' . substr($origin, 0, 180), 403);
+    json_response(['ok' => false, 'message' => 'Origin is not allowed.'], 403);
 }
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
     exit;
 }
 
@@ -334,7 +339,10 @@ function handle_signup(): void {
         $userId = (int) db()->lastInsertId();
     }
     $user = ['id' => $userId, 'tax_help_id' => $taxId, 'full_name' => $fullName, 'name' => $fullName, 'phone' => $phone, 'email' => $email];
-    $token = create_user_session($user);
+    create_user_session($user);
+    if (db_column_exists('users', 'last_login_at')) {
+        db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?')->execute([$userId]);
+    }
     best_effort(fn() => queueWhatsAppMessage($userId, null, $phone, 'signup', whatsapp_template('signup', ['name' => $user['full_name'], 'tax_id' => $taxId])));
     best_effort(fn() => email_admin_template(
         'signup_admin',
@@ -373,8 +381,11 @@ function handle_login(): void {
         fail('Invalid login details.', 401);
     }
     $summary = ['id' => (int) $user['id'], 'tax_help_id' => $user['tax_help_id'], 'full_name' => $user['full_name'], 'name' => $user['full_name'], 'phone' => $user['phone'], 'email' => $user['email']];
-    $token = create_user_session($summary);
-    ok(['user' => $summary], 'Login complete.');
+    create_user_session($summary);
+    if (db_column_exists('users', 'last_login_at')) {
+        db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?')->execute([(int) $user['id']]);
+    }
+    ok(['user' => $summary], 'Welcome back. You are logged in.');
 }
 
 function handle_logout(): void {
@@ -749,6 +760,12 @@ function handle_content_site(): void {
     }
     if (trim((string) ($settings['phone'] ?? '')) === '') {
         $settings['phone'] = trim((string) ($config['public_phone'] ?? '+91 73278 54329'));
+    }
+    if (trim((string) ($settings['public_email'] ?? '')) === '') {
+        $settings['public_email'] = trim((string) ($config['public_email'] ?? ''));
+    }
+    if (trim((string) ($settings['support_email'] ?? '')) === '') {
+        $settings['support_email'] = $settings['public_email'];
     }
     ok($settings);
 }

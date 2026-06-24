@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getMe, logout, type UserSummary } from "@/lib/api";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { useAuth } from "@/components/AuthProvider";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,29 +16,37 @@ const navItems = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<UserSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const { user, status, connectionMessage, refreshUser, logout } = useAuth();
 
   useEffect(() => {
-    getMe().then((result) => {
-      if (result.ok && result.data) {
-        setUser(result.data);
-      } else {
-        router.push("/login");
-      }
-      setLoading(false);
-    });
-  }, [router]);
+    if (status === "guest") {
+      router.replace(`/login?returnTo=${encodeURIComponent(pathname)}`);
+    }
+  }, [pathname, router, status]);
 
   async function handleLogout() {
     await logout();
     router.push("/");
+    router.refresh();
   }
 
-  if (loading) {
+  if (status === "loading" || status === "guest") {
     return (
       <section className="container-shell section-padding">
-        <div className="rounded-3xl bg-white p-8 shadow-soft">Loading dashboard...</div>
+        <div className="rounded-3xl bg-white p-8 shadow-soft" aria-live="polite">Checking your secure login...</div>
+      </section>
+    );
+  }
+
+  if (status === "unknown") {
+    return (
+      <section className="container-shell section-padding">
+        <div className="max-w-xl rounded-3xl border border-charcoal-900/10 bg-white p-8 shadow-soft">
+          <h1 className="text-2xl font-semibold text-charcoal-900">We could not load your dashboard.</h1>
+          <p className="mt-3 text-base leading-7 text-muted">{connectionMessage} Your login has not been cleared.</p>
+          <button type="button" onClick={() => void refreshUser()} className="mt-5 rounded-full bg-brand-600 px-5 py-3 text-sm font-semibold text-white">Try again</button>
+        </div>
       </section>
     );
   }

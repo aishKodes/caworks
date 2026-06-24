@@ -7,9 +7,10 @@ $result = null;
 $recipient = mail_config()['admin_email'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $recipient = trim((string) ($_POST['recipient'] ?? ''));
-    $result = send_email_result(
+    $result = safe_send_email(
         $recipient,
         'VB Consultants SMTP diagnostic email',
+        '',
         "This is a diagnostic email from VB Consultants.\n\nSMTP host: " . mail_config()['host'] . "\nPort: " . mail_config()['port'] . "\nEncryption: " . mail_config()['encryption'],
         ['event_type' => 'smtp_admin_test']
     );
@@ -33,6 +34,10 @@ admin_header('Test Email');
     <p>Port/encryption: <code><?= e((string) $diag['port']) ?> / <?= e($diag['encryption']) ?></code></p>
     <p>Username: <code><?= e($diag['username']) ?></code></p>
     <p>From: <code><?= e($diag['from_email']) ?></code></p>
+    <p>Reply-to: <code><?= e($diag['reply_to']) ?></code></p>
+    <p>Admin email: <code><?= e($diag['admin_email']) ?></code></p>
+    <p>Public email: <code><?= e($diag['public_email']) ?></code></p>
+    <p>Active source: <code><?= e($diag['config_source']) ?></code></p>
     <p>Password set: <?= $diag['password_set'] ? 'yes' : 'no' ?></p>
   </div>
 </div>

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/mail.php';
+require_once __DIR__ . '/../includes/mailer.php';
 
 $to = $argv[1] ?? '';
 if (!$to) {
@@ -18,12 +18,15 @@ echo "From email: {$diag['from_email']}" . PHP_EOL;
 echo "From name: {$diag['from_name']}" . PHP_EOL;
 echo "Reply-To: {$diag['reply_to']}" . PHP_EOL;
 echo "Admin email: {$diag['admin_email']}" . PHP_EOL;
+echo "Public email: {$diag['public_email']}" . PHP_EOL;
+echo "Config source: {$diag['config_source']}" . PHP_EOL;
 echo "Password set: " . ($diag['password_set'] ? 'yes' : 'no') . PHP_EOL;
 echo "Recipient: {$to}" . PHP_EOL;
 
-$result = send_email_result(
+$result = safe_send_email(
     $to,
     'VB Consultants SMTP CLI test',
+    '',
     "This is a CLI SMTP test email from VB Consultants.\n\nIf you received this, SMTP is working.",
     ['event_type' => 'smtp_cli_test']
 );

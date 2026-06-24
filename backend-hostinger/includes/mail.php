@@ -17,11 +17,11 @@ function mail_db_column_exists(string $table, string $column): bool {
 }
 
 function mail_integration_settings(): array {
-    static $settings = null;
-    if ($settings !== null) return $settings;
     $settings = [];
     try {
-        $rows = db()->query("SELECT setting_key, setting_value FROM integration_settings WHERE setting_group IN ('smtp','site') OR setting_key IN ('admin_email')")->fetchAll();
+        $rows = db()->query("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ('support_email','public_email')")->fetchAll();
+        foreach ($rows as $row) $settings[$row['setting_key']] = (string) ($row['setting_value'] ?? '');
+        $rows = db()->query("SELECT setting_key, setting_value FROM integration_settings WHERE setting_group IN ('smtp','site') OR setting_key IN ('admin_email','public_email')")->fetchAll();
         foreach ($rows as $row) $settings[$row['setting_key']] = (string) ($row['setting_value'] ?? '');
     } catch (Throwable $ignored) {
     }
@@ -38,29 +38,55 @@ function mail_config(): array {
     $app = app_config();
     $smtp = $app['smtp'] ?? [];
     $settings = mail_integration_settings();
-    $value = static function (string $settingKey, string $configKey, mixed $default = '') use ($settings, $smtp) {
-        if (array_key_exists($settingKey, $settings) && trim((string) $settings[$settingKey]) !== '') return $settings[$settingKey];
-        return $smtp[$configKey] ?? $default;
+    $configSource = (string) ($app['_config_source'] ?? 'config.example.php');
+    $isLiveConfig = $configSource === 'config.php';
+    $sources = [];
+    $mismatches = [];
+    $configured = static fn(mixed $value): bool => $value === false || $value === true || ($value !== null && trim((string) $value) !== '');
+    $choose = static function (string $settingKey, array $config, string $configKey, mixed $default = '') use ($settings, $isLiveConfig, $configSource, $configured, &$sources, &$mismatches) {
+        $configHasValue = array_key_exists($configKey, $config) && $configured($config[$configKey]);
+        $dbHasValue = array_key_exists($settingKey, $settings) && trim((string) $settings[$settingKey]) !== '';
+        if ($isLiveConfig && $configHasValue) {
+            $sources[$settingKey] = 'config.php';
+            if ($dbHasValue && (string) $settings[$settingKey] !== (string) $config[$configKey]) {
+                $mismatches[$settingKey] = ['config' => (string) $config[$configKey], 'database' => (string) $settings[$settingKey]];
+            }
+            return $config[$configKey];
+        }
+        if ($dbHasValue) {
+            $sources[$settingKey] = 'database';
+            return $settings[$settingKey];
+        }
+        if ($configHasValue) {
+            $sources[$settingKey] = $configSource;
+            return $config[$configKey];
+        }
+        $sources[$settingKey] = 'default';
+        return $default;
     };
-    $rootValue = static function (string $settingKey, string $configKey, mixed $default = '') use ($settings, $app) {
-        if (array_key_exists($settingKey, $settings) && trim((string) $settings[$settingKey]) !== '') return $settings[$settingKey];
-        return $app[$configKey] ?? $default;
-    };
-    $port = (int) $value('smtp_port', 'port', 465);
-    $encryption = strtolower(trim((string) $value('smtp_encryption', 'encryption', $port === 465 ? 'ssl' : 'tls')));
+    $port = (int) $choose('smtp_port', $smtp, 'port', 465);
+    $encryption = strtolower(trim((string) $choose('smtp_encryption', $smtp, 'encryption', $port === 465 ? 'ssl' : 'tls')));
     if (!in_array($encryption, ['ssl', 'tls', 'none'], true)) $encryption = $port === 465 ? 'ssl' : 'tls';
+    $username = trim((string) $choose('smtp_username', $smtp, 'username', ''));
+    $fromEmail = trim((string) $choose('smtp_from_email', $smtp, 'from_email', $username));
+    $replyTo = trim((string) $choose('smtp_reply_to', $smtp, 'reply_to', $fromEmail ?: $username));
     return [
-        'enabled' => mail_truthy($value('smtp_enabled', 'enabled', true), true),
-        'host' => trim((string) $value('smtp_host', 'host', 'smtp.hostinger.com')),
+        'enabled' => mail_truthy($choose('smtp_enabled', $smtp, 'enabled', true), true),
+        'host' => trim((string) $choose('smtp_host', $smtp, 'host', 'smtp.hostinger.com')),
         'port' => $port,
         'encryption' => $encryption,
-        'username' => trim((string) $value('smtp_username', 'username', '')),
-        'password' => (string) $value('smtp_password', 'password', ''),
-        'from_email' => trim((string) $value('smtp_from_email', 'from_email', $smtp['username'] ?? '')),
-        'from_name' => trim((string) $value('smtp_from_name', 'from_name', 'VB Consultants')),
-        'reply_to' => trim((string) $value('smtp_reply_to', 'reply_to', $smtp['from_email'] ?? $smtp['username'] ?? '')),
-        'admin_email' => trim((string) $rootValue('admin_email', 'admin_email', $smtp['from_email'] ?? $smtp['username'] ?? '')),
-        'debug' => mail_truthy($value('mail_debug', 'debug', false), false),
+        'username' => $username,
+        'password' => (string) $choose('smtp_password', $smtp, 'password', ''),
+        'from_email' => $fromEmail ?: $username,
+        'from_name' => trim((string) $choose('smtp_from_name', $smtp, 'from_name', 'VB Consultants')),
+        'reply_to' => $replyTo ?: ($fromEmail ?: $username),
+        'admin_email' => trim((string) $choose('admin_email', $app, 'admin_email', $fromEmail ?: $username)),
+        'public_email' => trim((string) $choose('public_email', $app, 'public_email', '')),
+        'debug' => mail_truthy($choose('mail_debug', $smtp, 'debug', false), false),
+        'config_source' => $configSource,
+        'sources' => $sources,
+        'mismatches' => $mismatches,
+        'database_values' => $settings,
     ];
 }
 
@@ -87,8 +113,12 @@ function mail_diagnostics(): array {
         'from_name' => $config['from_name'],
         'reply_to' => $config['reply_to'],
         'admin_email' => $config['admin_email'],
+        'public_email' => $config['public_email'],
         'debug' => $config['debug'],
         'password_set' => $config['password'] !== '',
+        'config_source' => $config['config_source'],
+        'sources' => $config['sources'],
+        'mismatches' => $config['mismatches'],
     ];
 }
 
@@ -253,24 +283,35 @@ function send_email_result(string $to, string $subject, string $body, array $opt
 }
 
 function send_email(string $to, string $subject, string $body, array $options = []): bool {
-    return send_email_result($to, $subject, $body, $options)['ok'];
+    return safe_send_email($to, $subject, '', $body, $options)['ok'];
 }
 
-function safe_send_email(string $to, string $subject, string $body, array $options = []): array {
+function safe_send_email(string $to, string $subject, string $html, string $text = '', array $meta = []): array {
     try {
-        return send_email_result($to, $subject, $body, $options);
+        $plain = trim($text) !== '' ? $text : mail_text_from_html($html);
+        $options = $meta;
+        if (trim($html) !== '') $options['html'] = $html;
+        return send_email_result($to, $subject, $plain, $options);
     } catch (Throwable $e) {
         mail_log_attempt([
-            'event_type' => $options['event_type'] ?? 'safe_send_email',
+            'event_type' => $meta['event_type'] ?? 'safe_send_email',
             'recipient' => $to,
             'subject' => $subject,
             'status' => 'failed',
             'provider' => 'smtp',
             'error_message' => $e->getMessage(),
-            'related_user_id' => $options['related_user_id'] ?? null,
-            'related_request_id' => $options['related_request_id'] ?? null,
+            'related_user_id' => $meta['related_user_id'] ?? null,
+            'related_request_id' => $meta['related_request_id'] ?? null,
         ]);
-        return ['ok' => false, 'status' => 'failed', 'error' => mail_safe_error($e->getMessage())];
+        return [
+            'ok' => false,
+            'status' => 'failed',
+            'provider' => 'smtp',
+            'recipient' => $to,
+            'subject' => $subject,
+            'error' => mail_safe_error($e->getMessage()),
+            'diagnostics' => mail_diagnostics(),
+        ];
     }
 }
 
@@ -297,7 +338,7 @@ function render_email_template(string $templateKey, array $vars, string $fallbac
 function send_template_email(string $to, string $templateKey, array $vars, string $fallbackSubject, string $fallbackBody, array $options = []): array {
     [$subject, $body] = render_email_template($templateKey, $vars, $fallbackSubject, $fallbackBody);
     $options['event_type'] = $options['event_type'] ?? $templateKey;
-    return send_email_result($to, $subject, $body, $options);
+    return safe_send_email($to, $subject, '', $body, $options);
 }
 
 function email_admin_template(string $templateKey, array $vars, string $fallbackSubject, string $fallbackBody, ?int $relatedUserId = null, ?int $relatedRequestId = null): array {
@@ -337,7 +378,7 @@ function email_admin(string $subject, string $body, string $eventType = 'admin_a
         ]);
         return ['ok' => false, 'error' => 'Admin email is not configured.'];
     }
-    return send_email_result($adminEmail, $subject, $body, [
+    return safe_send_email($adminEmail, $subject, '', $body, [
         'event_type' => $eventType,
         'related_user_id' => $relatedUserId,
         'related_request_id' => $relatedRequestId,

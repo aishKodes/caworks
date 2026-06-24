@@ -16,7 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? 'UPDATE users SET password_hash=?, account_enabled=1, active=1, updated_at=NOW() WHERE id=?'
                 : 'UPDATE users SET password_hash=?, active=1, updated_at=NOW() WHERE id=?';
             db()->prepare($sql)->execute([password_hash($password, PASSWORD_DEFAULT), $userId]);
-            audit_log((int) $admin['id'], $userId, 'user_password_reset', 'Customer login password or PIN set manually.');
+            if (table_exists_auth('user_sessions')) {
+                db()->prepare('UPDATE user_sessions SET revoked_at=NOW() WHERE user_id=? AND revoked_at IS NULL')->execute([$userId]);
+            }
+            audit_log((int) $admin['id'], $userId, 'user_password_reset', 'Customer login password or PIN set manually. Existing sessions revoked.');
             $message = 'Customer login is ready. Share the password or PIN only with the customer.';
         }
     } else {

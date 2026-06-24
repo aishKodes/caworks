@@ -113,30 +113,37 @@ Avoid manual password hash inserts unless you are recovering a broken install.
 
 ## 5. Configure Hostinger SMTP
 
-Create a real mailbox in Hostinger Email first. Recommended:
+Create the real mailbox in Hostinger Email first. This deployment is configured for:
 
 ```text
-consult@vbcbharat.com
+consult@api.vbcbharat.com
 ```
 
-Do not use `consult@api.vbcbharat.com` unless you have created a mailbox for the `api.vbcbharat.com` subdomain and DNS/email routing supports that subdomain.
+This address works only when Hostinger has an actual mailbox for the `api.vbcbharat.com` subdomain and its DNS/email routing is active. If the mailbox was created on the root domain instead, use that exact root-domain address consistently.
+
+Mail setting priority is deterministic:
+
+1. A non-empty value in live `config.php`.
+2. A non-empty value explicitly saved in the database.
+3. The safe value from `config.example.php`.
+
+The admin Email Settings and System Check pages show the active source and warn when saved database values differ from live `config.php`.
 
 Recommended `config.php` values:
 
 ```php
-'smtp' => [
-    'enabled' => true,
-    'host' => 'smtp.hostinger.com',
-    'port' => 465,
-    'encryption' => 'ssl',
-    'username' => 'consult@vbcbharat.com',
-    'password' => 'your_mailbox_password',
-    'from_email' => 'consult@vbcbharat.com',
-    'from_name' => 'VB Consultants',
-    'reply_to' => 'consult@vbcbharat.com',
-    'debug' => false,
-],
-'admin_email' => 'consult@vbcbharat.com',
+'SMTP_ENABLED' => true,
+'SMTP_HOST' => 'smtp.hostinger.com',
+'SMTP_PORT' => 465,
+'SMTP_ENCRYPTION' => 'ssl',
+'SMTP_USERNAME' => 'consult@api.vbcbharat.com',
+'SMTP_PASSWORD' => 'your_mailbox_password',
+'SMTP_FROM_EMAIL' => 'consult@api.vbcbharat.com',
+'SMTP_FROM_NAME' => 'VB Consultants',
+'SMTP_REPLY_TO' => 'consult@api.vbcbharat.com',
+'ADMIN_EMAIL' => 'consult@api.vbcbharat.com',
+'PUBLIC_EMAIL' => 'consult@api.vbcbharat.com',
+'MAIL_DEBUG' => false,
 ```
 
 Fallback if SSL 465 fails:
@@ -161,7 +168,7 @@ https://api.vbcbharat.com/admin/test-email.php
 Test from CLI:
 
 ```bash
-php scripts/test_mail.php consult@vbcbharat.com
+php scripts/test_mail.php consult@api.vbcbharat.com
 ```
 
 The CLI prints config loaded, enabled status, host, port, encryption, from email, username, recipient and a safe error message if sending fails.
@@ -174,6 +181,24 @@ If email does not arrive:
 - Check Hostinger MX/SPF/DKIM records.
 - Make sure `from_email` usually matches `smtp_username`.
 - Make sure SMTP is enabled in admin email settings.
+
+Email failure never rolls back signup, lead, request, upload, or payment actions. Every attempt is recorded in `email_logs` with a safe error message.
+
+## 5a. Persistent customer login
+
+Customer login uses a random 30-day session token. Only its SHA-256 hash is stored in `user_sessions`. Use these production values:
+
+```php
+'SESSION_COOKIE_NAME' => 'vbc_session',
+'SESSION_COOKIE_DOMAIN' => '.vbcbharat.com',
+'SESSION_DAYS' => 30,
+'SESSION_SAMESITE' => 'Lax',
+'SESSION_SECURE' => true,
+```
+
+The cookie is HttpOnly and Secure. The API accepts credentials only from `https://www.vbcbharat.com`; frontend API calls use `credentials: "include"`. Active sessions slide forward when they are near expiry. Password resets revoke existing sessions.
+
+For an existing database, import `migrations/fix_smtp_and_sessions.sql` once. A fresh database already gets these fields from `install.sql`.
 
 ## 6. Configure Razorpay
 

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { serviceOptions } from "@/data/services";
 import { getWhatsAppUrl, whatsappMessages } from "@/data/site.config";
-import { submitGuestRequest, type GuestRequestResult } from "@/lib/api";
+import { createServiceRequest, submitGuestRequest, type GuestRequestResult } from "@/lib/api";
 import { buildAuthRedirectUrl } from "@/lib/authRedirect";
+import { useAuth } from "@/components/AuthProvider";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3.5 text-base text-charcoal-900 shadow-sm transition placeholder:text-muted/70 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
@@ -21,6 +22,7 @@ export function GuestRequestForm({
   variant?: "default" | "hero";
   options?: ReadonlyArray<{ value: string; label: string }>;
 }) {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<GuestRequestResult | null>(null);
@@ -44,17 +46,32 @@ export function GuestRequestForm({
     const formData = new FormData(event.currentTarget);
     setStatus("loading");
     setMessage("");
-    const response = await submitGuestRequest({
-      name: String(formData.get("name") || ""),
-      phone: String(formData.get("phone") || ""),
-      email: String(formData.get("email") || ""),
-      service_slug: String(formData.get("service") || defaultService),
-      message: String(formData.get("message") || ""),
-      honeypot: String(formData.get("website") || "")
-    });
+    const selectedService = String(formData.get("service") || defaultService);
+    const details = String(formData.get("message") || "");
+    const response = isAuthenticated
+      ? await createServiceRequest({ serviceType: selectedService, details })
+      : await submitGuestRequest({
+          name: String(formData.get("name") || ""),
+          phone: String(formData.get("phone") || ""),
+          email: String(formData.get("email") || ""),
+          service_slug: selectedService,
+          message: details,
+          honeypot: String(formData.get("website") || "")
+        });
 
     if (response.ok && response.data) {
-      setResult(response.data);
+      if ("request" in response.data) {
+        const request = response.data.request;
+        setResult({
+          request_id: request.request_code,
+          request_db_id: request.id,
+          upload_token: "",
+          upload_url: `/dashboard/upload?requestId=${request.id}&service=${encodeURIComponent(selectedService)}`,
+          upload_path: `/dashboard/upload?requestId=${request.id}&service=${encodeURIComponent(selectedService)}`
+        });
+      } else {
+        setResult(response.data);
+      }
       setStatus("success");
       setMessage(response.message || "Thank you. Your request has been received. Our team will contact you on phone or WhatsApp.");
       return;
@@ -88,20 +105,20 @@ export function GuestRequestForm({
 
   return (
     <form onSubmit={handleSubmit} className={`rounded-3xl border border-charcoal-900/10 bg-white p-5 shadow-soft ${isHero ? "md:p-6" : "md:p-7"}`}>
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">{isHero ? "Get practical help" : "Continue without account"}</p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-charcoal-900">{isHero ? "Tell us what you need." : "Start with your phone number."}</h2>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">{isAuthenticated ? "Your account" : isHero ? "Get practical help" : "Continue without account"}</p>
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-charcoal-900">{isAuthenticated ? `Start a request as ${user?.full_name}.` : isHero ? "Tell us what you need." : "Start with your phone number."}</h2>
       <p className="mt-3 text-base leading-7 text-charcoal-700">
-        {isHero ? "No login needed. Send your issue and our team will call or message you." : "No password is needed. We will create your request and give you a secure document upload link."}
+        {isAuthenticated ? "This request and its documents will be saved to your dashboard." : isHero ? "No login needed. Send your issue and our team will call or message you." : "No password is needed. We will create your request and give you a secure document upload link."}
       </p>
 
       <div className="mt-6 grid gap-4">
         <label className="text-sm font-semibold text-charcoal-900">
           Name
-          <input name="name" className={inputClass} required autoComplete="name" />
+          <input key={`name-${user?.id || "guest"}`} name="name" className={inputClass} required autoComplete="name" defaultValue={user?.full_name || ""} />
         </label>
         <label className="text-sm font-semibold text-charcoal-900">
           Phone number
-          <input name="phone" className={inputClass} required inputMode="tel" autoComplete="tel" placeholder="+91..." />
+          <input key={`phone-${user?.id || "guest"}`} name="phone" className={inputClass} required inputMode="tel" autoComplete="tel" placeholder="+91..." defaultValue={user?.phone || ""} />
         </label>
         <label className="text-sm font-semibold text-charcoal-900">
           Service
@@ -114,7 +131,7 @@ export function GuestRequestForm({
         {isHero ? <input name="email" type="hidden" value="" /> : (
           <label className="text-sm font-semibold text-charcoal-900">
             Email <span className="font-medium text-muted">(optional)</span>
-            <input name="email" className={inputClass} type="email" autoComplete="email" />
+            <input key={`email-${user?.id || "guest"}`} name="email" className={inputClass} type="email" autoComplete="email" defaultValue={user?.email || ""} />
           </label>
         )}
         <label className="text-sm font-semibold text-charcoal-900">
@@ -124,12 +141,12 @@ export function GuestRequestForm({
         <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       </div>
 
-      <button disabled={status === "loading"} className="mt-6 min-h-12 w-full rounded-full bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
-        {status === "loading" ? "Sending..." : isHero ? "Get Help" : intent === "upload_documents" ? "Continue to upload" : "Start request"}
+      <button disabled={status === "loading" || authLoading} className="mt-6 min-h-12 w-full rounded-full bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
+        {status === "loading" || authLoading ? "Please wait..." : isHero ? "Get Help" : intent === "upload_documents" ? "Continue to upload" : "Start request"}
       </button>
       <p aria-live="polite" className="mt-4 min-h-6 text-sm font-medium text-brand-700">{message}</p>
 
-      {!isHero ? (
+      {!isHero && !isAuthenticated ? (
         <div className="mt-5 border-t border-charcoal-900/10 pt-5">
           <p className="text-sm text-charcoal-700">Want online tracking?</p>
           <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">

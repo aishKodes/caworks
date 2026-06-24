@@ -15,6 +15,7 @@ $fields = [
     'public_phone' => ['Public phone', 'site', 'text'],
     'whatsapp_number' => ['WhatsApp number', 'site', 'text'],
     'support_email' => ['Support email', 'site', 'text'],
+    'public_email' => ['Public email', 'site', 'text'],
     'address' => ['Address', 'site', 'text'],
     'google_maps_link' => ['Google Maps link', 'site', 'text'],
     'business_hours' => ['Business hours', 'site', 'text'],
@@ -50,4 +51,24 @@ foreach ($fields as $key => [$label]) {
     echo '</label>';
 }
 echo '<button class="btn">Save settings</button></form>';
+$mail = mail_diagnostics();
+$lastTest = null;
+$lastEmailError = null;
+try {
+    $lastTest = db()->query("SELECT status, error_message, created_at FROM email_logs WHERE event_type IN ('smtp_admin_test','smtp_cli_test') ORDER BY created_at DESC LIMIT 1")->fetch() ?: null;
+    $lastEmailError = db()->query("SELECT error_message, created_at FROM email_logs WHERE status <> 'sent' ORDER BY created_at DESC LIMIT 1")->fetch() ?: null;
+} catch (Throwable $ignored) {
+}
+echo '<div class="card" style="margin-top:18px"><h2>Email configuration</h2>';
+echo '<p class="muted">SMTP secrets are managed in Email Settings. Live <code>config.php</code> values take priority over database values.</p>';
+echo '<p>SMTP enabled: ' . e($mail['smtp_enabled'] ? 'Yes' : 'No') . '</p>';
+echo '<p>Host: <code>' . e($mail['host']) . ':' . e((string) $mail['port']) . ' / ' . e($mail['encryption']) . '</code></p>';
+echo '<p>Username: <code>' . e($mail['username']) . '</code></p>';
+echo '<p>From: <code>' . e($mail['from_email']) . '</code></p>';
+echo '<p>Reply-to: <code>' . e($mail['reply_to']) . '</code></p>';
+echo '<p>Admin notifications: <code>' . e($mail['admin_email']) . '</code></p>';
+echo '<p>Public email: <code>' . e($mail['public_email']) . '</code></p>';
+echo '<p>Last test: ' . ($lastTest ? status_badge((string) $lastTest['status']) . ' <span class="muted">' . e((string) $lastTest['created_at']) . '</span>' : '<span class="muted">Not tested</span>') . '</p>';
+echo '<p>Last email error: <span class="muted">' . e($lastEmailError ? ((string) $lastEmailError['error_message'] . ' · ' . (string) $lastEmailError['created_at']) : 'None logged') . '</span></p>';
+echo '<p><a class="btn small" href="email-settings.php">Manage email settings</a> <a class="btn small light" href="test-email.php">Send test email</a></p></div>';
 admin_footer();

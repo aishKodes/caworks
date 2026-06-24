@@ -71,7 +71,7 @@ export async function Footer() {
             </p>
             <div className="mt-6 space-y-2 text-sm text-white/70">
               {settings.address ? <p>{settings.address}</p> : null}
-              <p>{settings.phone} · {settings.support_email}</p>
+              <p>{settings.phone}{settings.public_email ? ` · ${settings.public_email}` : ""}</p>
               <p>www.vbcbharat.com</p>
               <p className="text-xs text-white/45">Registered business name: {siteConfig.registeredBusinessName}</p>
             </div>

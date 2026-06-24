@@ -5,16 +5,17 @@ import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { serviceOptions } from "@/data/services";
 import { getWhatsAppUrl, whatsappMessages } from "@/data/site.config";
-import { login } from "@/lib/api";
 import { buildAuthRedirectUrl, getPostAuthRedirect } from "@/lib/authRedirect";
+import { useAuth } from "@/components/AuthProvider";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3 text-sm text-charcoal-900 shadow-sm transition placeholder:text-muted/70 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
 
 export function LoginForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const passwordHelpUrl = getWhatsAppUrl(`${whatsappMessages.support} I need help resetting my password.`);
@@ -35,7 +36,12 @@ export function LoginForm() {
     });
 
     if (result.ok) {
-      router.push(getPostAuthRedirect(searchParams));
+      setStatus("success");
+      setMessage("Welcome back. You are logged in.");
+      window.setTimeout(() => {
+        router.replace(getPostAuthRedirect(searchParams));
+        router.refresh();
+      }, 350);
       return;
     }
 
@@ -75,8 +81,8 @@ export function LoginForm() {
         <span>Keep me logged in on this device.</span>
       </label>
 
-      <button disabled={status === "loading"} className="mt-6 w-full rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
-        {status === "loading" ? "Checking..." : "Login"}
+      <button disabled={status === "loading" || status === "success"} className="mt-6 w-full rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
+        {status === "loading" ? "Checking..." : status === "success" ? "Logged in" : "Login"}
       </button>
       <p aria-live="polite" className="mt-4 min-h-6 text-sm font-medium text-brand-700">{message}</p>
       <div className="mt-5 flex flex-col gap-2 text-sm text-muted">

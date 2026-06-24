@@ -5,10 +5,12 @@ function app_config(): array {
         return $config;
     }
     $path = __DIR__ . '/../config.php';
-    if (!file_exists($path)) {
+    $configSource = file_exists($path) ? 'config.php' : 'config.example.php';
+    if ($configSource === 'config.example.php') {
         $path = __DIR__ . '/../config.example.php';
     }
     $config = require $path;
+    $config['_config_source'] = $configSource;
     $aliases = [
         'app_url' => 'APP_URL',
         'frontend_url' => 'FRONTEND_URL',
@@ -19,6 +21,7 @@ function app_config(): array {
         'public_phone' => 'PUBLIC_PHONE',
         'whatsapp_number' => 'WHATSAPP_NUMBER',
         'admin_email' => 'ADMIN_EMAIL',
+        'public_email' => 'PUBLIC_EMAIL',
         'media_base_url' => 'MEDIA_BASE_URL',
         'razorpay_enabled' => 'RAZORPAY_ENABLED',
         'manual_payment_enabled' => 'MANUAL_PAYMENT_ENABLED',

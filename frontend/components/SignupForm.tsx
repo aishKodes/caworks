@@ -4,17 +4,18 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { serviceOptions } from "@/data/services";
-import { signup } from "@/lib/api";
 import { buildAuthRedirectUrl, getPostAuthRedirect } from "@/lib/authRedirect";
+import { useAuth } from "@/components/AuthProvider";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3 text-sm text-charcoal-900 shadow-sm transition placeholder:text-muted/70 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
 
 export function SignupForm() {
   const router = useRouter();
+  const { signup } = useAuth();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const startDefaultService = pathname === "/start" ? "salary-itr-filing" : "";
@@ -47,7 +48,12 @@ export function SignupForm() {
     });
 
     if (result.ok) {
-      router.push(getPostAuthRedirect(searchParams));
+      setStatus("success");
+      setMessage("Account created. You are now logged in.");
+      window.setTimeout(() => {
+        router.replace(getPostAuthRedirect(searchParams));
+        router.refresh();
+      }, 350);
       return;
     }
 
@@ -96,8 +102,8 @@ export function SignupForm() {
         <span>I agree to be contacted for this request and understand that final fee depends on documents and complexity.</span>
       </label>
 
-      <button disabled={status === "loading"} className="mt-6 w-full rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
-        {status === "loading" ? "Creating..." : "Create tracking account"}
+      <button disabled={status === "loading" || status === "success"} className="mt-6 w-full rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700 disabled:opacity-70">
+        {status === "loading" ? "Creating..." : status === "success" ? "Account ready" : "Create tracking account"}
       </button>
       <p aria-live="polite" className="mt-4 min-h-6 text-sm font-medium text-brand-700">{message}</p>
       <p className="mt-3 text-sm text-muted">

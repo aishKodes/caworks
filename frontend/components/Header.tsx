@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { siteConfig } from "@/data/site.config";
 import { services, type Service } from "@/data/services";
 import type { MenuServiceContent } from "@/lib/content";
 import { cn } from "@/lib/utils";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { useAuth } from "@/components/AuthProvider";
 
 const links = [
   { href: "/", label: "Home" },
@@ -80,6 +81,9 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const servicesMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, status, isAuthenticated, logout } = useAuth();
+  const firstName = user?.full_name?.trim().split(/\s+/)[0] || "Account";
   const groupedServices = useMemo(() => {
     if (menuServices.length) return groupCmsServices(menuServices);
     return menuGroups.map((group) => ({ ...group, items: group.slugs.map(serviceBySlug).filter(Boolean) as HeaderServiceItem[] }));
@@ -109,6 +113,13 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
       document.removeEventListener("touchstart", onPointerDown);
     };
   }, []);
+
+  async function handleLogout() {
+    await logout();
+    setOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-charcoal-900/10 bg-paper/90 backdrop-blur-xl">
@@ -186,14 +197,26 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <WhatsAppButton className="px-4 py-2.5" />
-          <Link href="/login" className="rounded-full border border-charcoal-900/10 px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition hover:border-brand-600 hover:text-brand-700">
-            Login
-          </Link>
-          <Link href="/request-service?service=not-sure" className="rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
-            Get Help Now
-          </Link>
+        <div className="hidden items-center gap-2 lg:flex">
+          {status === "loading" || status === "unknown" ? (
+            <span className="h-10 w-28 animate-pulse rounded-full bg-charcoal-900/5" aria-label="Checking login" />
+          ) : isAuthenticated ? (
+            <>
+              <Link href="/dashboard" className="rounded-full bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700">
+                {firstName} · Dashboard
+              </Link>
+              <Link href="/dashboard/requests" className="rounded-full px-3 py-2.5 text-sm font-semibold text-charcoal-900 hover:bg-white">My Requests</Link>
+              <Link href="/dashboard/upload" className="rounded-full px-3 py-2.5 text-sm font-semibold text-charcoal-900 hover:bg-white">Upload</Link>
+              <button type="button" onClick={handleLogout} className="rounded-full border border-charcoal-900/10 px-3 py-2.5 text-sm font-semibold text-charcoal-900 hover:border-brand-600 hover:text-brand-700">Logout</button>
+            </>
+          ) : (
+            <>
+              <WhatsAppButton className="px-4 py-2.5" />
+              <Link href="/login" className="rounded-full border border-charcoal-900/10 px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition hover:border-brand-600 hover:text-brand-700">Login</Link>
+              <Link href="/upload-documents" className="rounded-full px-3 py-2.5 text-sm font-semibold text-charcoal-900 hover:bg-white">Upload</Link>
+              <Link href="/request-service?service=not-sure" className="rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">Get Help Now</Link>
+            </>
+          )}
         </div>
 
         <button
@@ -211,11 +234,31 @@ export function Header({ menuServices = [] }: { menuServices?: MenuServiceConten
         <div className="border-t border-charcoal-900/10 bg-white lg:hidden">
           <div className="container-shell max-h-[calc(100vh-72px)] overflow-y-auto py-4">
             <div className="grid gap-2">
-              {[...links, { href: "/upload-documents", label: "Upload Docs" }, { href: "/track-status", label: "Track Status" }, { href: "/login", label: "Login" }, { href: "/signup", label: "Signup" }].map((link) => (
+              {[...links, { href: "/upload-documents", label: "Upload Docs" }, { href: "/track-status", label: "Track Status" }].map((link) => (
                 <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">
                   {link.label}
                 </Link>
               ))}
+              {isAuthenticated ? (
+                <>
+                  <div className="rounded-2xl bg-brand-50 px-4 py-3">
+                    <p className="font-semibold text-brand-800">{user?.full_name}</p>
+                    <p className="mt-1 text-xs text-brand-700">{user?.tax_help_id}</p>
+                  </div>
+                  <Link href="/dashboard" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">Dashboard</Link>
+                  <Link href="/dashboard/requests" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">My Requests</Link>
+                  <Link href="/dashboard/upload" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">Upload Documents</Link>
+                  <button type="button" onClick={handleLogout} className="rounded-2xl px-4 py-3 text-left text-sm font-semibold text-brand-700 hover:bg-brand-50">Logout</button>
+                </>
+              ) : status === "guest" ? (
+                <>
+                  <Link href="/login" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">Login</Link>
+                  <Link href="/signup" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-charcoal-900 hover:bg-brand-50">Create Account</Link>
+                  <Link href="/request-service?service=not-sure" onClick={() => setOpen(false)} className="rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white">Start Request</Link>
+                </>
+              ) : (
+                <div className="h-12 animate-pulse rounded-2xl bg-charcoal-900/5" aria-label="Checking login" />
+              )}
             </div>
             <button
               type="button"

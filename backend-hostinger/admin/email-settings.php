@@ -14,6 +14,7 @@ $fields = [
     'smtp_from_name' => ['From name', 'smtp', 0, 'text'],
     'smtp_reply_to' => ['Reply-to email', 'smtp', 0, 'email'],
     'admin_email' => ['Admin alert email', 'smtp', 0, 'email'],
+    'public_email' => ['Public email', 'smtp', 0, 'email'],
     'mail_debug' => ['Mail debug', 'smtp', 0, 'select'],
 ];
 
@@ -38,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (isset($_POST['send_test'])) {
         $recipient = trim((string) ($_POST['test_recipient'] ?? ''));
-        $testResult = send_email_result($recipient, 'VB Consultants SMTP test', "This is a test email from VB Consultants.\n\nIf you received this, Hostinger SMTP is working.", ['event_type' => 'smtp_admin_test']);
+        $testResult = safe_send_email($recipient, 'VB Consultants SMTP test', '', "This is a test email from VB Consultants.\n\nIf you received this, Hostinger SMTP is working.", ['event_type' => 'smtp_admin_test']);
         $message = $testResult['ok'] ? 'Test email sent.' : 'Test email failed. See details below.';
     }
 }
@@ -62,7 +63,7 @@ if ($testResult) {
   <form method="post" class="card">
     <?= csrf_field() ?>
     <h2>Hostinger SMTP</h2>
-    <p class="muted">Password is never shown. Enter a new password only if you want to replace the saved one.</p>
+    <p class="muted">Active values prefer <code>config.php</code>, then non-empty database values. Password is never shown.</p>
     <label class="field"><span>SMTP enabled</span><select name="smtp_enabled">
       <option value="true" <?= $config['enabled'] ? 'selected' : '' ?>>Enabled</option>
       <option value="false" <?= !$config['enabled'] ? 'selected' : '' ?>>Disabled</option>
@@ -74,12 +75,13 @@ if ($testResult) {
       <option value="tls" <?= $config['encryption'] === 'tls' ? 'selected' : '' ?>>TLS / STARTTLS (587)</option>
       <option value="none" <?= $config['encryption'] === 'none' ? 'selected' : '' ?>>None</option>
     </select></label>
-    <label class="field"><span>SMTP username</span><input name="smtp_username" type="email" value="<?= e($config['username']) ?>" placeholder="consult@vbcbharat.com"></label>
+    <label class="field"><span>SMTP username</span><input name="smtp_username" type="email" value="<?= e($config['username']) ?>" placeholder="consult@api.vbcbharat.com"></label>
     <label class="field"><span>Replace SMTP password</span><input name="smtp_password" type="password" value="" placeholder="<?= $config['password'] ? 'Saved. Enter new password to replace.' : 'Not set' ?>"></label>
-    <label class="field"><span>From email</span><input name="smtp_from_email" type="email" value="<?= e($config['from_email']) ?>" placeholder="consult@vbcbharat.com"></label>
+    <label class="field"><span>From email</span><input name="smtp_from_email" type="email" value="<?= e($config['from_email']) ?>" placeholder="consult@api.vbcbharat.com"></label>
     <label class="field"><span>From name</span><input name="smtp_from_name" value="<?= e($config['from_name']) ?>" placeholder="VB Consultants"></label>
-    <label class="field"><span>Reply-to</span><input name="smtp_reply_to" type="email" value="<?= e($config['reply_to']) ?>" placeholder="consult@vbcbharat.com"></label>
-    <label class="field"><span>Admin alert email</span><input name="admin_email" type="email" value="<?= e($config['admin_email']) ?>" placeholder="consult@vbcbharat.com"></label>
+    <label class="field"><span>Reply-to</span><input name="smtp_reply_to" type="email" value="<?= e($config['reply_to']) ?>" placeholder="consult@api.vbcbharat.com"></label>
+    <label class="field"><span>Admin alert email</span><input name="admin_email" type="email" value="<?= e($config['admin_email']) ?>" placeholder="consult@api.vbcbharat.com"></label>
+    <label class="field"><span>Public email</span><input name="public_email" type="email" value="<?= e($config['public_email']) ?>" placeholder="consult@api.vbcbharat.com"></label>
     <label class="field"><span>Mail debug</span><select name="mail_debug">
       <option value="false" <?= !$config['debug'] ? 'selected' : '' ?>>Off</option>
       <option value="true" <?= $config['debug'] ? 'selected' : '' ?>>On</option>
@@ -98,8 +100,8 @@ if ($testResult) {
       <h2>Common Hostinger checks</h2>
       <ul class="muted" style="line-height:1.8">
         <li>Make sure the mailbox exists in Hostinger Email.</li>
-        <li>Prefer <code>consult@vbcbharat.com</code> or <code>support@vbcbharat.com</code>.</li>
-        <li>Avoid <code>consult@api.vbcbharat.com</code> unless that subdomain mailbox and DNS email routing are configured.</li>
+        <li>Use <code>consult@api.vbcbharat.com</code> only when that exact Hostinger mailbox exists.</li>
+        <li>The SMTP username and From email should normally match.</li>
         <li>Hostinger SMTP host: <code>smtp.hostinger.com</code>.</li>
         <li>Use SSL port <code>465</code> or TLS port <code>587</code>.</li>
         <li>From email should usually match the SMTP username.</li>
@@ -107,6 +109,15 @@ if ($testResult) {
       </ul>
     </div>
   </div>
+</div>
+
+<div class="card" style="margin-top:18px">
+  <h2>Active source</h2>
+  <p>Configuration loaded from: <code><?= e($config['config_source']) ?></code></p>
+  <?php foreach ($config['sources'] as $key => $source): ?>
+    <p><code><?= e($key) ?></code>: <?= e($source) ?></p>
+  <?php endforeach; ?>
+  <?php if ($config['mismatches']): ?><p class="notice">Database values differ from live <code>config.php</code>. The live config values are active.</p><?php endif; ?>
 </div>
 
 <div class="card" style="margin-top:18px">

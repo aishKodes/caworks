@@ -15,7 +15,7 @@ require_once __DIR__ . '/../includes/cms.php';
 require_once __DIR__ . '/../includes/upload.php';
 require_once __DIR__ . '/../includes/audit.php';
 require_once __DIR__ . '/../includes/rate_limit.php';
-require_once __DIR__ . '/../includes/mail.php';
+require_once __DIR__ . '/../includes/mailer.php';
 
 const ADMIN_ROLES = ['super_admin', 'admin', 'staff', 'content_editor', 'accountant', 'viewer'];
 

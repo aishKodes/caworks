@@ -219,7 +219,7 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name)
 ('default_og_image', '/images/vbc/og-default-vb-consultants.png', 'text', 'site'),
 ('phone', '+91 73278 54329', 'text', 'site'),
 ('whatsapp_number', '919000000000', 'text', 'site'),
-('support_email', 'consult@vbcbharat.com', 'text', 'site'),
+('support_email', 'consult@api.vbcbharat.com', 'text', 'site'),
 ('address', '', 'text', 'site'),
 ('business_hours', 'Monday to Saturday, 10:00 AM to 6:00 PM', 'text', 'site'),
 ('default_seo_title', 'VB Consultants | Online Tax, GST and Business Paperwork Help', 'text', 'seo'),
@@ -231,12 +231,12 @@ INSERT INTO integration_settings (setting_key, setting_value, setting_group, is_
 ('smtp_host', 'smtp.hostinger.com', 'smtp', 0),
 ('smtp_port', '465', 'smtp', 0),
 ('smtp_encryption', 'ssl', 'smtp', 0),
-('smtp_username', 'consult@vbcbharat.com', 'smtp', 0),
+('smtp_username', 'consult@api.vbcbharat.com', 'smtp', 0),
 ('smtp_password', '', 'smtp', 1),
-('smtp_from_email', 'consult@vbcbharat.com', 'smtp', 0),
+('smtp_from_email', 'consult@api.vbcbharat.com', 'smtp', 0),
 ('smtp_from_name', 'VB Consultants', 'smtp', 0),
-('smtp_reply_to', 'consult@vbcbharat.com', 'smtp', 0),
-('admin_email', 'consult@vbcbharat.com', 'smtp', 0),
+('smtp_reply_to', 'consult@api.vbcbharat.com', 'smtp', 0),
+('admin_email', 'consult@api.vbcbharat.com', 'smtp', 0),
 ('mail_debug', 'false', 'smtp', 0)
 ON DUPLICATE KEY UPDATE setting_group=VALUES(setting_group), is_secret=VALUES(is_secret);
 

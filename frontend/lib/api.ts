@@ -8,6 +8,7 @@ export type ApiResult<T = unknown> = {
   message?: string;
   status?: number;
   request_id?: string;
+  networkError?: boolean;
 };
 
 export type QuickLeadPayload = {
@@ -94,7 +95,7 @@ export function clearStoredToken() {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
   const base = apiBaseUrl();
   if (!base) {
     return {
@@ -120,7 +121,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   } catch {
     return {
       ok: false,
-      message: "Something went wrong. Please try again or contact us on WhatsApp."
+      message: "We could not reach the server. Please check your connection and try again.",
+      networkError: true
     };
   }
 
@@ -139,7 +141,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
 }
 
 function jsonRequest<T>(path: string, body: unknown) {
-  return request<T>(path, {
+  return apiFetch<T>(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -182,8 +184,14 @@ export async function logout() {
   return result;
 }
 
+export async function getCurrentUser() {
+  const first = await apiFetch<UserSummary>("/api/me");
+  if (!first.networkError) return first;
+  return apiFetch<UserSummary>("/api/me");
+}
+
 export function getMe() {
-  return request<UserSummary>("/api/me");
+  return getCurrentUser();
 }
 
 export function createServiceRequest(payload: ServiceRequestPayload) {
@@ -191,15 +199,15 @@ export function createServiceRequest(payload: ServiceRequestPayload) {
 }
 
 export function getMyRequests() {
-  return request<ServiceRequestSummary[]>("/api/my-requests");
+  return apiFetch<ServiceRequestSummary[]>("/api/my-requests");
 }
 
 export function getRequest(id: string) {
-  return request<ServiceRequestDetail>(`/api/request/${encodeURIComponent(id)}`);
+  return apiFetch<ServiceRequestDetail>(`/api/request/${encodeURIComponent(id)}`);
 }
 
 export function uploadDocuments(formData: FormData) {
-  return request("/api/upload-documents", {
+  return apiFetch("/api/upload-documents", {
     method: "POST",
     body: formData
   });
@@ -217,7 +225,7 @@ export function verifyRazorpayPayment(payload: Record<string, string>) {
 }
 
 export function submitManualPayment(formData: FormData) {
-  return request("/api/manual-payment-screenshot", {
+  return apiFetch("/api/manual-payment-screenshot", {
     method: "POST",
     body: formData
   });

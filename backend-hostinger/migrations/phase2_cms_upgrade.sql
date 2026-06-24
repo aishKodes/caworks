@@ -124,7 +124,7 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name)
 ('tagline', 'Tax, GST, loans and business paperwork made simple.', 'text', 'site'),
 ('phone', '+91 73278 54329', 'text', 'site'),
 ('whatsapp_number', '919000000000', 'text', 'site'),
-('support_email', 'consult@vbcbharat.com', 'text', 'site'),
+('support_email', 'consult@api.vbcbharat.com', 'text', 'site'),
 ('address', '', 'text', 'site'),
 ('footer_text', 'Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance.', 'text', 'site'),
 ('social_links', '{}', 'json', 'site')

@@ -39,6 +39,7 @@ export type SiteSettingsContent = {
   phone?: string;
   whatsapp_number?: string;
   support_email?: string;
+  public_email?: string;
   address?: string;
   footer_text?: string;
 };
@@ -196,11 +197,13 @@ export async function getServicePricingNote(slug: string): Promise<string | null
   return matches.map((item) => `${item.name}: ${item.price}`).join(" · ");
 }
 
-export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettingsContent, "phone" | "support_email" | "address" | "footer_text">>> {
+export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettingsContent, "phone" | "support_email" | "public_email" | "address" | "footer_text">>> {
   const remote = await fetchCms<SiteSettingsContent>("/api/content/site-settings");
+  const publicEmail = (remote?.public_email || remote?.support_email || siteConfig.email).trim();
   return {
     phone: remote?.phone || siteConfig.phone,
-    support_email: remote?.support_email || siteConfig.email,
+    support_email: publicEmail,
+    public_email: publicEmail,
     address: cleanAddress(remote?.address) || cleanAddress(siteConfig.address),
     footer_text: cleanPublicText(remote?.footer_text, "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance, built for clear mobile steps.")
       .replace("Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance.", "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance.")

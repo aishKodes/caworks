@@ -78,6 +78,21 @@ function auth_session_days(): int {
     return max(1, (int) ($config['SESSION_DAYS'] ?? $config['session_days'] ?? 30));
 }
 
+function auth_config_bool(string $key, bool $default): bool {
+    $config = app_config();
+    $value = $config[$key] ?? $config[strtolower($key)] ?? $default;
+    if (is_bool($value)) {
+        return $value;
+    }
+    return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
+}
+
+function auth_cookie_samesite(): string {
+    $config = app_config();
+    $value = ucfirst(strtolower((string) ($config['SESSION_SAMESITE'] ?? $config['session_samesite'] ?? 'Lax')));
+    return in_array($value, ['Lax', 'Strict', 'None'], true) ? $value : 'Lax';
+}
+
 function current_request_token_hash(?string $token = null): ?string {
     $token = $token ?? bearer_token();
     return $token ? hash('sha256', $token) : null;
@@ -98,18 +113,66 @@ function table_exists_auth(string $table): bool {
     return $cache[$table];
 }
 
+function column_exists_auth(string $table, string $column): bool {
+    static $cache = [];
+    $key = $table . '.' . $column;
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+    try {
+        $stmt = db()->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+        $stmt->execute([$table, $column]);
+        $cache[$key] = (bool) $stmt->fetch();
+    } catch (Throwable $ignored) {
+        $cache[$key] = false;
+    }
+    return $cache[$key];
+}
+
+function log_auth_issue(string $message, ?int $httpStatus = 401): void {
+    if (!table_exists_auth('api_errors')) {
+        return;
+    }
+    try {
+        $columns = ['request_id', 'method', 'path', 'message', 'trace', 'ip_address', 'user_agent'];
+        $values = [
+            'AUTH-' . bin2hex(random_bytes(5)),
+            $_SERVER['REQUEST_METHOD'] ?? 'GET',
+            parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/api/me'), PHP_URL_PATH),
+            $message,
+            null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+        ];
+        if (column_exists_auth('api_errors', 'http_status')) {
+            $columns[] = 'http_status';
+            $values[] = $httpStatus;
+        }
+        $stmt = db()->prepare('INSERT INTO api_errors (' . implode(', ', $columns) . ') VALUES (' . implode(', ', array_fill(0, count($columns), '?')) . ')');
+        $stmt->execute($values);
+    } catch (Throwable $ignored) {
+    }
+}
+
 function create_user_session(array $user): string {
     $rawToken = base64url_encode_text(random_bytes(32));
     if (table_exists_auth('user_sessions')) {
         $expires = (new DateTimeImmutable('+' . auth_session_days() . ' days'))->format('Y-m-d H:i:s');
-        $stmt = db()->prepare('INSERT INTO user_sessions (user_id, token_hash, expires_at, last_used_at, user_agent, ip_hash) VALUES (?, ?, ?, NOW(), ?, ?)');
-        $stmt->execute([
-            (int) $user['id'],
-            hash('sha256', $rawToken),
-            $expires,
-            substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
-            hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? '')),
-        ]);
+        $agent = substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+        $columns = ['user_id', 'token_hash', 'expires_at', 'last_used_at', 'user_agent', 'ip_hash'];
+        $values = ['?', '?', '?', 'NOW()', '?', '?'];
+        $params = [(int) $user['id'], hash('sha256', $rawToken), $expires, $agent, hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? ''))];
+        if (column_exists_auth('user_sessions', 'last_seen_at')) {
+            $columns[] = 'last_seen_at';
+            $values[] = 'NOW()';
+        }
+        if (column_exists_auth('user_sessions', 'user_agent_hash')) {
+            $columns[] = 'user_agent_hash';
+            $values[] = '?';
+            $params[] = hash('sha256', $agent);
+        }
+        $stmt = db()->prepare('INSERT INTO user_sessions (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $values) . ')');
+        $stmt->execute($params);
     }
     set_auth_cookie(auth_cookie_name(), $rawToken, 60 * 60 * 24 * auth_session_days());
     return $rawToken;
@@ -121,22 +184,48 @@ function user_from_session_token(?string $token): ?array {
     }
     try {
         $stmt = db()->prepare('
-            SELECT u.id, u.tax_help_id, u.full_name, u.phone, u.email
+            SELECT u.id, u.tax_help_id, u.full_name, u.phone, u.email, u.active,
+                   s.id AS session_id, s.expires_at, s.revoked_at
             FROM user_sessions s
             JOIN users u ON u.id = s.user_id
             WHERE s.token_hash = ?
-              AND s.revoked_at IS NULL
-              AND s.expires_at > NOW()
-              AND COALESCE(u.active, 1) = 1
             LIMIT 1
         ');
-        $stmt->execute([hash('sha256', $token)]);
+        $tokenHash = hash('sha256', $token);
+        $stmt->execute([$tokenHash]);
         $user = $stmt->fetch();
-        if ($user) {
-            db()->prepare('UPDATE user_sessions SET last_used_at = NOW() WHERE token_hash = ?')->execute([hash('sha256', $token)]);
-            return $user;
+        if (!$user) {
+            log_auth_issue('Session token was not found.');
+            return null;
         }
-    } catch (Throwable $ignored) {
+        if (!empty($user['revoked_at'])) {
+            log_auth_issue('A revoked customer session was presented.');
+            return null;
+        }
+        $expiresAt = strtotime((string) $user['expires_at']);
+        if (!$expiresAt || $expiresAt <= time()) {
+            log_auth_issue('An expired customer session was presented.');
+            return null;
+        }
+        if (isset($user['active']) && !(int) $user['active']) {
+            log_auth_issue('An inactive customer account attempted authentication.');
+            return null;
+        }
+
+        $updates = ['last_used_at = NOW()'];
+        if (column_exists_auth('user_sessions', 'last_seen_at')) {
+            $updates[] = 'last_seen_at = NOW()';
+        }
+        if (($expiresAt - time()) < 7 * 86400) {
+            $newExpiry = (new DateTimeImmutable('+' . auth_session_days() . ' days'))->format('Y-m-d H:i:s');
+            $updates[] = 'expires_at = ' . db()->quote($newExpiry);
+            set_auth_cookie(auth_cookie_name(), $token, 60 * 60 * 24 * auth_session_days());
+        }
+        db()->prepare('UPDATE user_sessions SET ' . implode(', ', $updates) . ' WHERE token_hash = ?')->execute([$tokenHash]);
+        unset($user['session_id'], $user['expires_at'], $user['revoked_at'], $user['active']);
+        return $user;
+    } catch (Throwable $e) {
+        log_auth_issue('Customer session lookup failed: ' . $e->getMessage());
     }
     return null;
 }
@@ -154,6 +243,7 @@ function revoke_current_user_session(): void {
 function require_user(): array {
     $user = optional_user();
     if (!$user) {
+        log_auth_issue('Authentication was required but no valid customer session was available.');
         fail('Please login first.', 401);
     }
     return $user;
@@ -245,34 +335,40 @@ function require_admin_permission(string $permission): array {
 
 function set_auth_cookie(string $name, string $value, int $ttl): void {
     $config = app_config();
-    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $detectedSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $secure = auth_config_bool('SESSION_SECURE', $detectedSecure);
     $params = [
         'expires' => time() + $ttl,
         'path' => '/',
         'secure' => $secure,
         'httponly' => true,
-        'samesite' => 'Lax',
+        'samesite' => auth_cookie_samesite(),
     ];
     $domain = $name === auth_cookie_name() ? auth_cookie_domain() : (string) ($config['admin_cookie_domain'] ?? '');
     if ($domain !== '') {
         $params['domain'] = $domain;
     }
-    setcookie($name, $value, $params);
+    if (!setcookie($name, $value, $params)) {
+        log_auth_issue('Customer session cookie could not be set.', null);
+    }
 }
 
 function clear_auth_cookie(string $name): void {
     $config = app_config();
-    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $detectedSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || str_starts_with((string) ($config['app_url'] ?? ''), 'https://');
+    $secure = auth_config_bool('SESSION_SECURE', $detectedSecure);
     $params = [
         'expires' => time() - 3600,
         'path' => '/',
         'secure' => $secure,
         'httponly' => true,
-        'samesite' => 'Lax',
+        'samesite' => auth_cookie_samesite(),
     ];
     $domain = $name === auth_cookie_name() ? auth_cookie_domain() : (string) ($config['admin_cookie_domain'] ?? '');
     if ($domain !== '') {
         $params['domain'] = $domain;
     }
-    setcookie($name, '', $params);
+    if (!setcookie($name, '', $params)) {
+        log_auth_issue('Customer session cookie could not be cleared.', null);
+    }
 }

@@ -16,7 +16,7 @@ export const siteConfig = {
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.vbcbharat.com",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919000000000",
   razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-  email: "consult@vbcbharat.com",
+  email: (process.env.NEXT_PUBLIC_PUBLIC_EMAIL || "").trim(),
   phone: process.env.NEXT_PUBLIC_PUBLIC_PHONE || "+91 73278 54329",
   upiId: "vbc@upi",
   address: (process.env.NEXT_PUBLIC_OFFICE_ADDRESS || "Bhubaneswar, Odisha").trim(),

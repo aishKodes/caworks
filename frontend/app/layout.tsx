@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileBottomCTA } from "@/components/MobileBottomCTA";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
+import { AuthProvider } from "@/components/AuthProvider";
 import { siteConfig } from "@/data/site.config";
 import { getMenuServices } from "@/lib/content";
 import { getOrganizationSchema, getProfessionalServiceSchema, getWebSiteSchema } from "@/lib/schema";
@@ -53,10 +54,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en-IN">
       <body>
         <SEOJsonLd data={[getOrganizationSchema(), getProfessionalServiceSchema(), getWebSiteSchema()]} />
-        <Header menuServices={menuServices} />
-        <main className="pb-20 md:pb-0">{children}</main>
-        <Footer />
-        <MobileBottomCTA />
+        <AuthProvider>
+          <Header menuServices={menuServices} />
+          <main className="pb-20 md:pb-0">{children}</main>
+          <Footer />
+          <MobileBottomCTA />
+        </AuthProvider>
       </body>
     </html>
   );
