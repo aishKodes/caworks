@@ -58,7 +58,19 @@ CREATE TABLE IF NOT EXISTS quick_leads (
   message TEXT NULL,
   source_page VARCHAR(160) NULL,
   utm_source VARCHAR(160) NULL,
+  utm_medium VARCHAR(160) NULL,
   utm_campaign VARCHAR(160) NULL,
+  utm_term VARCHAR(160) NULL,
+  utm_content VARCHAR(160) NULL,
+  gclid VARCHAR(180) NULL,
+  gbraid VARCHAR(180) NULL,
+  wbraid VARCHAR(180) NULL,
+  msclkid VARCHAR(180) NULL,
+  landing_page VARCHAR(500) NULL,
+  referrer VARCHAR(500) NULL,
+  lead_source VARCHAR(80) NULL,
+  user_agent_hash CHAR(64) NULL,
+  ip_hash CHAR(64) NULL,
   status VARCHAR(60) DEFAULT 'New',
   admin_note TEXT NULL,
   assigned_admin_id INT NULL,
@@ -72,7 +84,22 @@ CREATE TABLE IF NOT EXISTS service_requests (
   service_type VARCHAR(120) NOT NULL,
   status VARCHAR(80) DEFAULT 'Request received',
   city VARCHAR(120) NULL,
+  claim_type VARCHAR(120) NULL,
   details TEXT NULL,
+  utm_source VARCHAR(160) NULL,
+  utm_medium VARCHAR(160) NULL,
+  utm_campaign VARCHAR(160) NULL,
+  utm_term VARCHAR(160) NULL,
+  utm_content VARCHAR(160) NULL,
+  gclid VARCHAR(180) NULL,
+  gbraid VARCHAR(180) NULL,
+  wbraid VARCHAR(180) NULL,
+  msclkid VARCHAR(180) NULL,
+  landing_page VARCHAR(500) NULL,
+  referrer VARCHAR(500) NULL,
+  lead_source VARCHAR(80) NULL,
+  user_agent_hash CHAR(64) NULL,
+  ip_hash CHAR(64) NULL,
   quoted_amount DECIMAL(10,2) NULL,
   assigned_admin_id INT NULL,
   upload_token_hash CHAR(64) NULL,
@@ -95,6 +122,20 @@ CREATE TABLE IF NOT EXISTS documents (
   size INT NOT NULL,
   path VARCHAR(500) NOT NULL,
   status VARCHAR(80) DEFAULT 'Received',
+  utm_source VARCHAR(160) NULL,
+  utm_medium VARCHAR(160) NULL,
+  utm_campaign VARCHAR(160) NULL,
+  utm_term VARCHAR(160) NULL,
+  utm_content VARCHAR(160) NULL,
+  gclid VARCHAR(180) NULL,
+  gbraid VARCHAR(180) NULL,
+  wbraid VARCHAR(180) NULL,
+  msclkid VARCHAR(180) NULL,
+  landing_page VARCHAR(500) NULL,
+  referrer VARCHAR(500) NULL,
+  lead_source VARCHAR(80) NULL,
+  user_agent_hash CHAR(64) NULL,
+  ip_hash CHAR(64) NULL,
   admin_note TEXT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -114,6 +155,20 @@ CREATE TABLE IF NOT EXISTS uploaded_documents (
   size INT NOT NULL,
   path VARCHAR(500) NOT NULL,
   status VARCHAR(80) DEFAULT 'Received',
+  utm_source VARCHAR(160) NULL,
+  utm_medium VARCHAR(160) NULL,
+  utm_campaign VARCHAR(160) NULL,
+  utm_term VARCHAR(160) NULL,
+  utm_content VARCHAR(160) NULL,
+  gclid VARCHAR(180) NULL,
+  gbraid VARCHAR(180) NULL,
+  wbraid VARCHAR(180) NULL,
+  msclkid VARCHAR(180) NULL,
+  landing_page VARCHAR(500) NULL,
+  referrer VARCHAR(500) NULL,
+  lead_source VARCHAR(80) NULL,
+  user_agent_hash CHAR(64) NULL,
+  ip_hash CHAR(64) NULL,
   admin_note TEXT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -243,6 +298,40 @@ CREATE TABLE IF NOT EXISTS request_notes (
   FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS lead_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  event_type VARCHAR(120) NOT NULL,
+  service VARCHAR(160) NULL,
+  request_code VARCHAR(40) NULL,
+  request_id INT NULL,
+  user_id INT NULL,
+  quick_lead_id INT NULL,
+  event_label VARCHAR(180) NULL,
+  link_url VARCHAR(500) NULL,
+  page_path VARCHAR(500) NULL,
+  utm_source VARCHAR(160) NULL,
+  utm_medium VARCHAR(160) NULL,
+  utm_campaign VARCHAR(160) NULL,
+  utm_term VARCHAR(160) NULL,
+  utm_content VARCHAR(160) NULL,
+  gclid VARCHAR(180) NULL,
+  gbraid VARCHAR(180) NULL,
+  wbraid VARCHAR(180) NULL,
+  msclkid VARCHAR(180) NULL,
+  landing_page VARCHAR(500) NULL,
+  referrer VARCHAR(500) NULL,
+  lead_source VARCHAR(80) NULL,
+  user_agent_hash CHAR(64) NULL,
+  ip_hash CHAR(64) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_lead_events_request (request_id, request_code),
+  INDEX idx_lead_events_source (lead_source, created_at),
+  INDEX idx_lead_events_event (event_type, created_at),
+  FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (quick_lead_id) REFERENCES quick_leads(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NULL,
@@ -298,8 +387,10 @@ CREATE TABLE IF NOT EXISTS api_errors (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE INDEX idx_quick_leads_phone ON quick_leads(phone);
+CREATE INDEX idx_quick_leads_source ON quick_leads(lead_source, created_at);
 CREATE INDEX idx_requests_user_status ON service_requests(user_id, status);
 CREATE INDEX idx_requests_code ON service_requests(request_code);
+CREATE INDEX idx_requests_source_service ON service_requests(lead_source, service_type, created_at);
 CREATE INDEX idx_documents_request ON documents(request_id);
 CREATE INDEX idx_payments_request ON payments(request_id);
 
@@ -679,11 +770,14 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name)
 ('tagline', 'Tax, Compliance & Business Support', 'text', 'site'),
 ('phone', '+91 73278 54329', 'text', 'site'),
 ('public_phone', '+91 73278 54329', 'text', 'site'),
-('whatsapp_number', '919000000000', 'text', 'site'),
+('whatsapp_number', '917327854329', 'text', 'site'),
 ('support_email', 'consult@api.vbcbharat.com', 'text', 'site'),
 ('public_email', 'consult@api.vbcbharat.com', 'text', 'site'),
 ('address', 'Bhubaneswar, Odisha', 'text', 'site'),
 ('google_maps_link', '', 'text', 'site'),
+('google_business_profile_url', '', 'text', 'site'),
+('google_maps_url', '', 'text', 'site'),
+('google_review_url', '', 'text', 'site'),
 ('business_hours', 'Monday to Saturday, 10:00 AM to 6:00 PM', 'text', 'site'),
 ('footer_text', 'Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance.', 'text', 'site'),
 ('social_links', '{}', 'json', 'site'),
@@ -785,17 +879,22 @@ ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), short_de
 
 UPDATE service_page_content SET category='Insurance Claim Support' WHERE category='Insurance Claims';
 UPDATE service_page_content
-SET title='Insurance Claim Support Services',
-    short_description='Documentation, claim form, follow-up, rejection review, settlement and escalation support.',
-    subtitle='Facing problems with an insurance claim? VB Consultants helps with documentation, claim form preparation, submission support, follow-up and escalation support.',
-    sections_json='{"whoFor":["People starting a claim","Rejected or delayed claims","Underpaid settlement cases","Nominees and families","Businesses with property or loss claims"],"whatWeDo":["Professional documentation support","Claim form preparation and submission support","Follow-up and rejection review","Settlement documentation and escalation support"],"documents":["Policy copy","Claim form","Claim rejection or status letter","Bills, reports and discharge summary","FIR, repair estimate or survey report","Insurance company communication","ID proof","Nominee documents","Settlement papers","Other supporting documents"],"process":["Share your claim issue","Upload policy and claim papers","We review documents","We help prepare forms and replies","We support follow-up and escalation","Settlement documentation support"]}',
+SET title='Insurance Claim Rejected or Delayed? Get Claim Support',
+    short_description='Claim documentation, follow-up, rejection review, settlement paperwork and escalation support.',
+    subtitle='Upload your policy copy, rejection letter or claim papers. VB Consultants helps with claim documentation, follow-up, rejection review, settlement paperwork and escalation support where required.',
+    sections_json='{"whoFor":["People with rejected insurance claims","Health or cashless claim denial cases","Mediclaim reimbursement stuck cases","Motor, life, personal accident and property claim users","Short settlement or delayed claim cases"],"whatWeDo":["Review policy and insurer response","Organize claim forms and supporting papers","Support claim follow-up and settlement documentation","Prepare reply, grievance or escalation support where required"],"documents":["Policy copy","Claim form","Rejection or status letter","Hospital bills and discharge summary for health claims","FIR, repair estimate or survey report for motor claims","Insurance company emails, SMS or WhatsApp messages","ID proof","Settlement papers if any","Other supporting documents"],"process":["Tell us your claim issue","Upload policy and claim papers","We review and contact you","Documentation, follow-up or escalation moves forward"]}',
     pricing_text='Fee is confirmed after checking claim type, amount, documents and required action.',
-    seo_title='Insurance Claim Support Services in Bhubaneswar and Odisha | VB Consultants',
-    seo_description='Insurance claim documentation, form preparation, follow-up, rejection review, settlement and escalation support from VB Consultants.'
+    seo_title='Insurance Claim Rejected or Delayed? Get Claim Support | VB Consultants',
+    seo_description='Upload your policy copy, rejection letter or claim papers. VB Consultants helps with insurance claim documentation, follow-up, rejection review and escalation support.'
 WHERE slug='insurance-claim-support';
 UPDATE service_page_content SET title='Health Insurance Claim Assistance' WHERE slug='health-insurance-claim-help';
 UPDATE service_page_content SET title='Claim Rejection Review & Documentation Guidance' WHERE slug='insurance-claim-rejected';
 UPDATE service_page_content SET show_in_menu=0 WHERE slug IN ('mediclaim-reimbursement-help','cashless-claim-denied','life-insurance-claim-dispute','motor-insurance-claim-dispute','property-insurance-claim-help','insurance-legal-escalation-support');
+
+INSERT INTO service_page_content (slug, title, category, short_description, subtitle, hero_image, sections_json, pricing_text, faqs_json, seo_title, seo_description, is_active, sort_order, show_in_menu, show_on_homepage) VALUES
+('itr-filing','ITR Filing','Individuals','ITR support for salary, capital gains, freelancer and business income cases.','Start with your phone number and upload available documents. We will check which ITR route fits your case.','/images/vbc/salary-itr-form-16-family.png','{"whoFor":["Salaried people","Pensioners","Capital gains cases","Freelancers","Small business owners"],"whatWeDo":["Understand income type","Check available documents","Guide the ITR form route","Confirm fee before work","Track request status"],"documents":["Form 16 if applicable","PAN","Aadhaar","AIS / Form 26AS","Capital gains or business records if applicable","Bank details"],"process":["Tell us your income type","Upload available papers","We review and contact you","Filing support moves forward"]}','Salary ITR starts from ₹199 onwards. Other cases are quoted after document review.','[]','ITR Filing Online | VB Consultants','Simple online ITR filing support for salary, capital gains, freelancer and business income cases.',1,2,1,1),
+('income-tax-notice-help','Income Tax Notice Help','Individuals','Upload your income tax notice and related papers for next-step support.','Received a notice? Upload the document and related records. Our team will check the issue and contact you.','/images/vbc/tax-notice-help-consultation.png','{"whoFor":["People with income tax notices","AIS or Form 26AS mismatch cases","Demand or defective return notices","Salary and business users"],"whatWeDo":["Check notice type","Review deadline and records","Prepare missing document list","Guide response steps","Track status"],"documents":["Notice copy","PAN","ITR acknowledgement","AIS / Form 26AS","Bank and income records"],"process":["Upload notice","Issue is checked","Documents requested","Reply support starts after fee confirmation"]}','Custom fee based on notice type and complexity.','[]','Income Tax Notice Help | VB Consultants','Upload your income tax notice, AIS/Form 26AS and related documents for simple next-step support.',1,6,1,1)
+ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), short_description=VALUES(short_description), subtitle=VALUES(subtitle), hero_image=VALUES(hero_image), sections_json=VALUES(sections_json), pricing_text=VALUES(pricing_text), seo_title=VALUES(seo_title), seo_description=VALUES(seo_description), is_active=VALUES(is_active), show_in_menu=VALUES(show_in_menu), show_on_homepage=VALUES(show_on_homepage);
 
 INSERT INTO services (slug, service_name, category, short_description, hero_title, hero_subtitle, hero_image, pricing_text, seo_title, seo_description, active, sort_order, show_in_menu, show_on_homepage)
 SELECT slug, title, category, short_description, title, subtitle, hero_image, pricing_text, seo_title, seo_description, is_active, sort_order, show_in_menu, show_on_homepage
@@ -921,6 +1020,18 @@ CROSS JOIN service_document_requirements AS requirement
 WHERE requirement.service_slug = 'insurance-claim-support'
 ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description), required=VALUES(required), allow_multiple=VALUES(allow_multiple), sort_order=VALUES(sort_order), active=VALUES(active);
 
+INSERT INTO service_document_requirements (service_slug, document_key, title, description, required, allow_multiple, sort_order, active)
+SELECT 'itr-filing', document_key, title, description, required, allow_multiple, sort_order, active
+FROM service_document_requirements
+WHERE service_slug = 'salary-itr-filing'
+ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description), required=VALUES(required), allow_multiple=VALUES(allow_multiple), sort_order=VALUES(sort_order), active=VALUES(active);
+
+INSERT INTO service_document_requirements (service_slug, document_key, title, description, required, allow_multiple, sort_order, active)
+SELECT 'income-tax-notice-help', document_key, title, description, required, allow_multiple, sort_order, active
+FROM service_document_requirements
+WHERE service_slug = 'tax-notice-help'
+ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description), required=VALUES(required), allow_multiple=VALUES(allow_multiple), sort_order=VALUES(sort_order), active=VALUES(active);
+
 INSERT INTO faqs (page_key, service_slug, question, answer, sort_order, active) VALUES
 ('homepage', '', 'Can I start with only my phone number?', 'Yes. Enter your phone number and the team can call or message you with the next step.', 1, 1),
 ('homepage', '', 'Can I send documents on WhatsApp?', 'Yes. You can upload documents on the website or ask for WhatsApp support if you need help.', 2, 1),
@@ -995,7 +1106,16 @@ INSERT INTO integration_settings (setting_key, setting_value, setting_group, is_
 ('public_email', 'consult@api.vbcbharat.com', 'smtp', 0),
 ('mail_debug', 'false', 'smtp', 0),
 ('google_analytics_id', '', 'analytics', 0),
+('google_tag_manager_id', '', 'analytics', 0),
 ('google_ads_conversion_id', '', 'analytics', 0),
+('google_ads_insurance_lead_label', '', 'analytics', 0),
+('google_ads_form_submit_label', '', 'analytics', 0),
+('google_ads_whatsapp_click_label', '', 'analytics', 0),
+('google_ads_phone_click_label', '', 'analytics', 0),
+('google_ads_document_upload_label', '', 'analytics', 0),
+('google_business_profile_url', '', 'google', 0),
+('google_maps_url', '', 'google', 0),
+('google_review_url', '', 'google', 0),
 ('meta_pixel_id', '', 'analytics', 0),
 ('whatsapp_api_phone_number_id', '', 'whatsapp', 0),
 ('whatsapp_api_access_token', '', 'whatsapp', 1),

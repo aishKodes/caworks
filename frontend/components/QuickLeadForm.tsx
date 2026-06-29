@@ -5,6 +5,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { whatsappMessages } from "@/data/site.config";
 import { serviceOptions } from "@/data/services";
 import { submitQuickLead } from "@/lib/api";
+import { trackEvent } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -15,6 +16,7 @@ export function QuickLeadForm({ sourcePage = "homepage", compact = false }: { so
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -36,6 +38,7 @@ export function QuickLeadForm({ sourcePage = "homepage", compact = false }: { so
     if (!/^[0-9+\s-]{8,16}$/.test(phone)) {
       setStatus("error");
       setMessage("Please enter a valid phone number.");
+      trackEvent("form_error", { service: String(formData.get("service") || ""), event_label: "invalid_phone" });
       return;
     }
 
@@ -60,9 +63,11 @@ export function QuickLeadForm({ sourcePage = "homepage", compact = false }: { so
       form.reset();
       setStatus("success");
       setMessage("Thank you. Our team will contact you on phone or WhatsApp.");
+      trackEvent("guest_request_submit", { service: String(formData.get("service") || ""), source: sourcePage });
     } else {
       setStatus("error");
       setMessage(result.message || "Something went wrong. Please try again or use WhatsApp.");
+      trackEvent("form_error", { service: String(formData.get("service") || ""), event_label: result.message || "quick_lead_failed" });
     }
   }
 
@@ -70,6 +75,11 @@ export function QuickLeadForm({ sourcePage = "homepage", compact = false }: { so
     <form
       ref={formRef}
       onSubmit={handleSubmit}
+      onFocusCapture={() => {
+        if (started) return;
+        setStarted(true);
+        trackEvent("form_start", { service: compact ? "salary-itr-filing" : "not-sure", source: sourcePage });
+      }}
       className={cn(
         "rounded-3xl border border-charcoal-900/10 bg-white p-5 shadow-soft md:p-6",
         compact && "shadow-premium lg:min-w-[320px]"

@@ -56,8 +56,19 @@ if ($status !== '') {
     $params[] = $status;
 }
 if ($source !== '') {
-    $where[] = 'source_page LIKE ?';
-    $params[] = '%' . $source . '%';
+    if (in_array($source, ['insurance', 'itr', 'gst', 'loan'], true)) {
+        $where[] = 'service LIKE ?';
+        $params[] = '%' . $source . '%';
+    } elseif (admin_db_column_exists('quick_leads', 'lead_source') && $source === 'google_ads') {
+        $where[] = "(lead_source = 'google_ads' OR COALESCE(gclid,'') <> '' OR COALESCE(gbraid,'') <> '' OR COALESCE(wbraid,'') <> '')";
+    } elseif (admin_db_column_exists('quick_leads', 'lead_source') && $source === 'organic') {
+        $where[] = "lead_source IN ('organic','referral')";
+    } elseif (admin_db_column_exists('quick_leads', 'lead_source') && $source === 'direct') {
+        $where[] = "lead_source = 'direct'";
+    } else {
+        $where[] = 'source_page LIKE ?';
+        $params[] = '%' . $source . '%';
+    }
 }
 $sql = 'SELECT * FROM quick_leads';
 if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -72,16 +83,19 @@ if ($message) echo '<div class="notice success">' . e($message) . '</div>';
 <form class="toolbar">
   <label class="field"><span>Search</span><input name="q" value="<?= e($q) ?>" placeholder="Phone, name, service"></label>
   <label class="field"><span>Status</span><select name="status"><option value="">All</option><?= admin_select_options(['New','Contacted','Interested','Not reachable','Converted','Closed'], $status) ?></select></label>
-  <label class="field"><span>Source</span><input name="source" value="<?= e($source) ?>" placeholder="home, contact, ad"></label>
+  <label class="field"><span>Source / type</span><select name="source"><option value="">All leads</option><?= admin_select_options(['google_ads','organic','direct','whatsapp','insurance','itr','gst','loan'], $source) ?></select></label>
   <button class="btn">Filter</button>
   <?php if (can('export_data')): ?><a class="btn light" href="export_leads.php">Export CSV</a><?php endif; ?>
 </form>
 <div class="table-wrap">
-<table><tr><th>ID</th><th>Name</th><th>Phone</th><th>Service</th><th>Status</th><th>Source</th><th>Action</th><th>Date</th></tr>
+<table><tr><th>ID</th><th>Name</th><th>Phone</th><th>Service</th><th>Status</th><th>Attribution</th><th>Action</th><th>Date</th></tr>
 <?php
 foreach ($rows as $row) {
     $wa = admin_whatsapp_url($row['phone'], 'Hello, you requested help from VB Consultants for ' . $row['service'] . '.');
-    echo '<tr><td>' . e($row['id']) . '</td><td>' . e($row['name']) . '<br><span class="muted">' . e($row['message']) . '</span></td><td>' . e($row['phone']) . '</td><td>' . e($row['service']) . '</td><td>' . status_badge(ucfirst((string) $row['status'])) . '<br><span class="muted">' . e($row['admin_note'] ?? '') . '</span></td><td>' . e($row['source_page']) . '</td><td><div class="actions"><a class="btn small" href="' . e($wa) . '" target="_blank" rel="noopener noreferrer">WhatsApp</a>';
+    $attr = trim(($row['lead_source'] ?? '') . ' ' . ($row['utm_campaign'] ?? '') . ' ' . ($row['utm_term'] ?? ''));
+    $attrHtml = ($row['source_page'] ?? '') ? e($row['source_page']) . '<br>' : '';
+    $attrHtml .= $attr !== '' ? '<span class="muted">' . e($attr) . '</span><br><span class="muted">' . e($row['landing_page'] ?? '') . '</span>' : '<span class="muted">Not captured</span>';
+    echo '<tr><td>' . e($row['id']) . '</td><td>' . e($row['name']) . '<br><span class="muted">' . e($row['message']) . '</span></td><td>' . e($row['phone']) . '</td><td>' . e($row['service']) . '</td><td>' . status_badge(ucfirst((string) $row['status'])) . '<br><span class="muted">' . e($row['admin_note'] ?? '') . '</span></td><td>' . $attrHtml . '</td><td><div class="actions"><a class="btn small" href="' . e($wa) . '" target="_blank" rel="noopener noreferrer">WhatsApp</a>';
     if (can('manage_leads')) {
         echo '<form method="post">' . csrf_field() . '<input type="hidden" name="lead_id" value="' . e($row['id']) . '"><select name="status">' . admin_select_options(['New','Contacted','Interested','Not reachable','Converted','Closed'], ucfirst((string) $row['status'])) . '</select><input name="admin_note" placeholder="Note" value="' . e($row['admin_note'] ?? '') . '"><button class="btn small light">Save</button></form>';
         echo '<form method="post" onsubmit="return confirm(\'Convert this lead to a request for an existing user with the same phone?\')">' . csrf_field() . '<input type="hidden" name="lead_id" value="' . e($row['id']) . '"><button class="btn small secondary" name="convert_lead" value="1">Convert</button></form>';

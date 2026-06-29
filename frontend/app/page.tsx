@@ -8,7 +8,6 @@ import { PricingCards } from "@/components/PricingCards";
 import { ProcessSteps } from "@/components/ProcessSteps";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SEOJsonLd } from "@/components/SEOJsonLd";
-import { TestimonialCards } from "@/components/TestimonialCards";
 import { TrustBadges } from "@/components/TrustBadges";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { homeFaqs } from "@/data/faqs";
@@ -79,6 +78,16 @@ const salaryBullets = [
 
 const individualItems = ["Salary ITR", "Form 16 filing", "Insurance claim help", "Notice help", "Capital gains filing"];
 const businessItems = ["GST filing", "Bookkeeping", "TDS", "Registration", "Payroll", "Project report", "Subsidy guidance"];
+const adsTrustItems = [
+  "Easy WhatsApp support",
+  "Secure document upload",
+  "Clear process",
+  "Local Odisha support",
+  "Insurance, tax, GST and business documentation help",
+  "Call-back from team",
+  "Google Business Profile available",
+  "No false refund or claim approval promises"
+];
 const individualLinks: Record<string, string> = {
   "Salary ITR": "/salary-itr-filing",
   "Form 16 filing": "/salary-itr-filing",
@@ -132,7 +141,7 @@ export default async function HomePage() {
         <TrustBadges />
       </section>
 
-      <section className="container-shell section-padding pt-8">
+      <section id="services" className="container-shell scroll-mt-28 section-padding pt-8">
         <SectionHeader
           eyebrow="Four ways we help"
           title="Practical support for money and paperwork problems"
@@ -334,9 +343,13 @@ export default async function HomePage() {
 
       <section className="bg-white/75 py-16 md:py-20">
         <div className="container-shell">
-          <SectionHeader eyebrow="User notes" title="Placeholder testimonials" description="Replace these with approved real feedback later." />
-          <div className="mt-9">
-            <TestimonialCards items={homepageContent.testimonials} />
+          <SectionHeader eyebrow="Trust" title="Why People Contact VBC Bharat" description="The process is built for people who want clear help with urgent money and paperwork problems." />
+          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {adsTrustItems.map((item) => (
+              <div key={item} className="rounded-2xl border border-charcoal-900/10 bg-white p-5 text-base font-semibold leading-7 text-charcoal-900 shadow-soft">
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </section>

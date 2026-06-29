@@ -69,6 +69,7 @@ try {
 
 function route(string $method, string $path): void {
     if ($method === 'GET' && $path === '/health') ok(['status' => 'online', 'time' => date('c')]);
+    if ($method === 'POST' && $path === '/lead-event') handle_lead_event();
     if ($method === 'POST' && $path === '/quick-lead') handle_quick_lead();
     if ($method === 'POST' && $path === '/contact') handle_contact();
     if ($method === 'POST' && $path === '/signup') handle_signup();
@@ -151,6 +152,100 @@ function db_column_exists(string $table, string $column): bool {
     return $cache[$key];
 }
 
+function db_table_exists(string $table): bool {
+    static $cache = [];
+    if (array_key_exists($table, $cache)) {
+        return $cache[$table];
+    }
+    try {
+        $stmt = db()->prepare('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1');
+        $stmt->execute([$table]);
+        $cache[$table] = (bool) $stmt->fetch();
+    } catch (Throwable $ignored) {
+        $cache[$table] = false;
+    }
+    return $cache[$table];
+}
+
+function client_hash(?string $value): ?string {
+    $value = trim((string) $value);
+    return $value === '' ? null : hash('sha256', $value);
+}
+
+function attribution_from_payload(array $data): array {
+    $source = is_array($data['attribution'] ?? null) ? $data['attribution'] : [];
+    $keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'landing_page', 'referrer'];
+    $result = [];
+    foreach ($keys as $key) {
+        $value = $source[$key] ?? $data[$key] ?? ($data['utm'][$key] ?? null);
+        $result[$key] = clean_string($value ?? '', $key === 'landing_page' || $key === 'referrer' ? 500 : 180);
+    }
+    $sourceName = 'direct';
+    $utmSource = strtolower($result['utm_source']);
+    if ($result['gclid'] || $result['gbraid'] || $result['wbraid'] || str_contains($utmSource, 'google')) {
+        $sourceName = 'google_ads';
+    } elseif ($result['msclkid']) {
+        $sourceName = 'microsoft_ads';
+    } elseif ($utmSource) {
+        $sourceName = $utmSource;
+    } elseif ($result['referrer']) {
+        $sourceName = 'referral';
+    }
+    $result['lead_source'] = clean_string($sourceName, 80);
+    $result['user_agent_hash'] = client_hash($_SERVER['HTTP_USER_AGENT'] ?? '');
+    $result['ip_hash'] = client_hash($_SERVER['REMOTE_ADDR'] ?? '');
+    return $result;
+}
+
+function add_optional_tracking_columns(string $table, array &$columns, array &$values, array $attribution): void {
+    $fieldMap = [
+        'utm_source' => 'utm_source',
+        'utm_medium' => 'utm_medium',
+        'utm_campaign' => 'utm_campaign',
+        'utm_term' => 'utm_term',
+        'utm_content' => 'utm_content',
+        'gclid' => 'gclid',
+        'gbraid' => 'gbraid',
+        'wbraid' => 'wbraid',
+        'msclkid' => 'msclkid',
+        'landing_page' => 'landing_page',
+        'referrer' => 'referrer',
+        'lead_source' => 'lead_source',
+        'user_agent_hash' => 'user_agent_hash',
+        'ip_hash' => 'ip_hash',
+    ];
+    foreach ($fieldMap as $column => $key) {
+        if (db_column_exists($table, $column)) {
+            $columns[] = $column;
+            $values[] = $attribution[$key] ?: null;
+        }
+    }
+}
+
+function insert_row_dynamic(string $table, array $columns, array $values): void {
+    $safeColumns = array_map(fn($column) => '`' . str_replace('`', '``', $column) . '`', $columns);
+    $placeholders = implode(',', array_fill(0, count($safeColumns), '?'));
+    db()->prepare('INSERT INTO `' . str_replace('`', '``', $table) . '` (' . implode(',', $safeColumns) . ') VALUES (' . $placeholders . ')')->execute($values);
+}
+
+function record_lead_event(string $eventName, array $payload, ?int $userId = null, ?int $requestId = null): void {
+    if (!db_table_exists('lead_events')) return;
+    $attribution = attribution_from_payload($payload);
+    $columns = ['event_type', 'service', 'request_code', 'request_id', 'user_id', 'event_label', 'link_url', 'page_path'];
+    $values = [
+        clean_string($eventName, 120),
+        clean_string($payload['service'] ?? $payload['service_slug'] ?? '', 160),
+        clean_string($payload['request_id'] ?? $payload['request_code'] ?? '', 40),
+        $requestId,
+        $userId,
+        clean_string($payload['event_label'] ?? '', 180),
+        clean_string($payload['link_url'] ?? '', 500),
+        clean_string($payload['page_path'] ?? '', 500),
+    ];
+    add_optional_tracking_columns('lead_events', $columns, $values, $attribution);
+    best_effort(fn() => insert_row_dynamic('lead_events', $columns, $values));
+}
+
 function best_effort(callable $callback): void {
     try {
         $callback();
@@ -224,6 +319,29 @@ function guest_request_user(string $name, string $phone, string $email): array {
     ];
 }
 
+function handle_lead_event(): void {
+    $data = read_json();
+    $eventName = clean_string($data['event_name'] ?? $data['event'] ?? '', 120);
+    if ($eventName === '') {
+        ok([], 'Ignored.');
+    }
+    $user = optional_user();
+    $userId = $user ? (int) $user['id'] : null;
+    $requestId = null;
+    $requestCode = clean_string($data['request_id'] ?? $data['request_code'] ?? '', 40);
+    if ($requestCode !== '') {
+        $stmt = db()->prepare('SELECT id, user_id FROM service_requests WHERE request_code=? LIMIT 1');
+        $stmt->execute([$requestCode]);
+        $request = $stmt->fetch();
+        if ($request) {
+            $requestId = (int) $request['id'];
+            $userId = $userId ?: (int) $request['user_id'];
+        }
+    }
+    record_lead_event($eventName, $data, $userId, $requestId);
+    ok([], 'Event recorded.');
+}
+
 function handle_quick_lead(): void {
     rate_limit('quick_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 8, 300);
     $data = read_json();
@@ -231,16 +349,19 @@ function handle_quick_lead(): void {
     require_fields($data, ['phone']);
     $phone = clean_string($data['phone'], 30);
     if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
-    $stmt = db()->prepare('INSERT INTO quick_leads (name, phone, service, message, source_page, utm_source, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([
+    $attribution = attribution_from_payload($data);
+    $columns = ['name', 'phone', 'service', 'message', 'source_page'];
+    $values = [
         clean_string($data['name'] ?? '', 160),
         $phone,
         clean_string($data['service'] ?? '', 120),
         clean_string($data['message'] ?? '', 1000),
         clean_string($data['sourcePage'] ?? '', 160),
-        clean_string($data['utm']['utm_source'] ?? '', 160),
-        clean_string($data['utm']['utm_campaign'] ?? '', 160),
-    ]);
+    ];
+    add_optional_tracking_columns('quick_leads', $columns, $values, $attribution);
+    insert_row_dynamic('quick_leads', $columns, $values);
+    $leadId = (int) db()->lastInsertId();
+    record_lead_event('quick_lead_submit', ['service' => $values[2], 'event_label' => 'quick_lead', 'attribution' => $attribution], null, null);
     email_admin_template(
         'quick_lead_admin',
         [
@@ -261,8 +382,11 @@ function handle_contact(): void {
     require_fields($data, ['name', 'phone', 'message']);
     $phone = clean_string($data['phone'], 30);
     if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
-    $stmt = db()->prepare('INSERT INTO quick_leads (name, phone, service, message, source_page) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([clean_string($data['name'], 160), $phone, clean_string($data['service'] ?? '', 120), clean_string($data['message'], 1000), 'contact']);
+    $attribution = attribution_from_payload($data);
+    $columns = ['name', 'phone', 'service', 'message', 'source_page'];
+    $values = [clean_string($data['name'], 160), $phone, clean_string($data['service'] ?? '', 120), clean_string($data['message'], 1000), 'contact'];
+    add_optional_tracking_columns('quick_leads', $columns, $values, $attribution);
+    insert_row_dynamic('quick_leads', $columns, $values);
     email_admin_template(
         'contact_admin',
         [
@@ -411,20 +535,35 @@ function handle_guest_request(): void {
     $phone = clean_string($data['phone'], 30);
     $email = strtolower(clean_string($data['email'] ?? '', 180));
     $serviceSlug = clean_string($data['service_slug'], 120);
+    $claimType = clean_string($data['claim_type'] ?? $data['claimType'] ?? '', 120);
     $message = clean_string($data['message'] ?? '', 2000);
     if (!valid_phone($phone)) fail('Please enter a valid phone number.', 422);
     if ($email !== '' && !valid_email($email)) fail('Please enter a valid email address or leave it blank.', 422);
 
     $user = guest_request_user($name, $phone, $email);
     $requestCode = unique_public_code('REQ', 'service_requests', 'request_code');
-    db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, details) VALUES (?, ?, ?, ?, ?)')->execute([
+    $attribution = attribution_from_payload($data);
+    $columns = ['request_code', 'user_id', 'service_type', 'status', 'details'];
+    $values = [
         $requestCode,
         (int) $user['id'],
         $serviceSlug,
         'Request received',
         $message,
-    ]);
+    ];
+    if (db_column_exists('service_requests', 'claim_type')) {
+        $columns[] = 'claim_type';
+        $values[] = $claimType ?: null;
+    }
+    add_optional_tracking_columns('service_requests', $columns, $values, $attribution);
+    insert_row_dynamic('service_requests', $columns, $values);
     $requestId = (int) db()->lastInsertId();
+    record_lead_event($serviceSlug === 'insurance-claim-support' || str_contains($serviceSlug, 'insurance') || str_contains($serviceSlug, 'claim') ? 'insurance_lead_submit' : 'guest_request_submit', [
+        'service' => $serviceSlug,
+        'request_id' => $requestCode,
+        'event_label' => $claimType ?: 'guest_request',
+        'attribution' => $attribution,
+    ], (int) $user['id'], $requestId);
     $access = create_request_upload_access($requestId);
     db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([
         $requestId,
@@ -468,11 +607,24 @@ function handle_service_request(): void {
     $data = read_json();
     require_fields($data, ['serviceType']);
     $code = generate_code('REQ');
-    $stmt = db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, city, details) VALUES (?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$code, $user['id'], clean_string($data['serviceType'], 120), 'Request received', clean_string($data['city'] ?? '', 120), clean_string($data['details'] ?? '', 2000)]);
+    $serviceType = clean_string($data['serviceType'], 120);
+    $attribution = attribution_from_payload($data);
+    $columns = ['request_code', 'user_id', 'service_type', 'status', 'city', 'details'];
+    $values = [$code, $user['id'], $serviceType, 'Request received', clean_string($data['city'] ?? '', 120), clean_string($data['details'] ?? '', 2000)];
+    if (db_column_exists('service_requests', 'claim_type')) {
+        $columns[] = 'claim_type';
+        $values[] = clean_string($data['claimType'] ?? $data['claim_type'] ?? '', 120) ?: null;
+    }
+    add_optional_tracking_columns('service_requests', $columns, $values, $attribution);
+    insert_row_dynamic('service_requests', $columns, $values);
     $requestId = (int) db()->lastInsertId();
     db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$requestId, 'Request received', 'Request created.']);
-    $serviceType = clean_string($data['serviceType'], 120);
+    record_lead_event(str_contains($serviceType, 'insurance') || str_contains($serviceType, 'claim') ? 'insurance_lead_submit' : 'service_request_submit', [
+        'service' => $serviceType,
+        'request_id' => $code,
+        'event_label' => 'account_request',
+        'attribution' => $attribution,
+    ], (int) $user['id'], $requestId);
     email_admin_template(
         'service_request_admin',
         ['name' => $user['full_name'], 'tax_id' => $user['tax_help_id'], 'request_id' => $code, 'service_name' => $serviceType],
@@ -557,17 +709,20 @@ function handle_upload_documents(): void {
     $serviceSlug = clean_string($_POST['service_slug'] ?? '', 160);
     $uploadMessage = clean_string($_POST['message'] ?? '', 2000);
     $serviceLabel = clean_string($_POST['service_label'] ?? $serviceSlug, 160);
+    $attribution = attribution_from_payload($_POST);
     if ($requestId <= 0 && $serviceSlug !== '') {
         $code = generate_code('REQ');
-        $stmt = db()->prepare('INSERT INTO service_requests (request_code, user_id, service_type, status, city, details) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([
+        $columns = ['request_code', 'user_id', 'service_type', 'status', 'city', 'details'];
+        $values = [
             $code,
             $user['id'],
             $serviceSlug,
             $files ? 'Documents pending' : 'Draft',
             '',
             $uploadMessage ?: 'Document upload started.',
-        ]);
+        ];
+        add_optional_tracking_columns('service_requests', $columns, $values, $attribution);
+        insert_row_dynamic('service_requests', $columns, $values);
         $requestId = (int) db()->lastInsertId();
         db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([
             $requestId,
@@ -602,12 +757,15 @@ function handle_upload_documents(): void {
             $info = save_uploaded_file($file, 'doc');
             $type = clean_string($documentTypes[$index] ?? 'document', 120);
             $label = clean_string($documentLabels[$index] ?? $type, 180);
+            $columns = ['user_id', 'request_id', 'document_type', 'document_label', 'original_name', 'stored_name', 'mime_type', 'size', 'path'];
             $values = [$user['id'], $requestId ?: null, $type, $label, $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']];
-            $stmt = db()->prepare('INSERT INTO uploaded_documents (user_id, request_id, document_type, document_label, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute($values);
+            add_optional_tracking_columns('uploaded_documents', $columns, $values, $attribution);
+            insert_row_dynamic('uploaded_documents', $columns, $values);
             $uploadedDocumentId = (int) db()->lastInsertId();
-            $stmt = db()->prepare('INSERT INTO documents (user_id, request_id, document_type, document_label, original_name, stored_name, mime_type, size, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute($values);
+            $docColumns = ['user_id', 'request_id', 'document_type', 'document_label', 'original_name', 'stored_name', 'mime_type', 'size', 'path'];
+            $docValues = [$user['id'], $requestId ?: null, $type, $label, $info['original_name'], $info['stored_name'], $info['mime_type'], $info['size'], $info['path']];
+            add_optional_tracking_columns('documents', $docColumns, $docValues, $attribution);
+            insert_row_dynamic('documents', $docColumns, $docValues);
             $saved[] = [
                 'id' => $uploadedDocumentId,
                 'name' => $info['original_name'],
@@ -628,6 +786,12 @@ function handle_upload_documents(): void {
         db()->prepare('UPDATE service_requests SET status = ? WHERE id = ?')->execute(['Documents received', $requestId]);
         db()->prepare('INSERT INTO status_updates (request_id, status, note, visible_to_user) VALUES (?, ?, ?, 1)')->execute([$requestId, 'Documents received', 'Documents uploaded.']);
     }
+    record_lead_event('document_upload_submit', [
+        'service' => $serviceSlug,
+        'request_id' => $requestCode,
+        'event_label' => count($saved) . ' files',
+        'attribution' => $attribution,
+    ], (int) $user['id'], $requestId ?: null);
     best_effort(fn() => email_admin_template(
         'document_upload_admin',
         [
@@ -766,6 +930,17 @@ function handle_content_site(): void {
     }
     if (trim((string) ($settings['support_email'] ?? '')) === '') {
         $settings['support_email'] = $settings['public_email'];
+    }
+    if (trim((string) ($settings['google_business_profile_url'] ?? '')) === '') {
+        $settings['google_business_profile_url'] = trim((string) ($config['google_business_profile_url'] ?? ''));
+    }
+    if (trim((string) ($settings['google_maps_url'] ?? $settings['google_maps_link'] ?? '')) === '') {
+        $settings['google_maps_url'] = trim((string) ($config['google_maps_url'] ?? ''));
+    } elseif (!isset($settings['google_maps_url']) && isset($settings['google_maps_link'])) {
+        $settings['google_maps_url'] = $settings['google_maps_link'];
+    }
+    if (trim((string) ($settings['google_review_url'] ?? '')) === '') {
+        $settings['google_review_url'] = trim((string) ($config['google_review_url'] ?? ''));
     }
     ok($settings);
 }

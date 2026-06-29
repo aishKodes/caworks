@@ -1,6 +1,7 @@
 "use client";
 
 import { siteConfig } from "@/data/site.config";
+import { appendAttributionToFormData, getStoredAttribution, type AttributionPayload } from "@/lib/tracking";
 
 export type ApiResult<T = unknown> = {
   ok: boolean;
@@ -19,6 +20,7 @@ export type QuickLeadPayload = {
   sourcePage?: string;
   honeypot?: string;
   utm?: Record<string, string>;
+  attribution?: AttributionPayload;
 };
 
 export type SignupPayload = {
@@ -31,6 +33,7 @@ export type SignupPayload = {
   service?: string;
   intent?: string;
   returnTo?: string;
+  attribution?: AttributionPayload;
 };
 
 export type GuestRequestPayload = {
@@ -38,8 +41,10 @@ export type GuestRequestPayload = {
   phone: string;
   email?: string;
   service_slug: string;
+  claim_type?: string;
   message?: string;
   honeypot?: string;
+  attribution?: AttributionPayload;
 };
 
 export type GuestRequestResult = {
@@ -58,9 +63,11 @@ export type LoginPayload = {
 
 export type ServiceRequestPayload = {
   serviceType: string;
+  claimType?: string;
   incomeType?: string;
   city?: string;
   details?: string;
+  attribution?: AttributionPayload;
 };
 
 export type ContactPayload = {
@@ -70,6 +77,7 @@ export type ContactPayload = {
   service?: string;
   message: string;
   honeypot?: string;
+  attribution?: AttributionPayload;
 };
 
 function apiBaseUrl() {
@@ -140,13 +148,25 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   return { ...payload, status: response.status };
 }
 
+function withAttribution(body: unknown) {
+  if (!body || typeof body !== "object" || body instanceof FormData) return body;
+  const payload = body as Record<string, unknown>;
+  return {
+    ...payload,
+    attribution: {
+      ...((payload.attribution as Record<string, string> | undefined) || {}),
+      ...getStoredAttribution()
+    }
+  };
+}
+
 function jsonRequest<T>(path: string, body: unknown) {
   return apiFetch<T>(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(withAttribution(body))
   });
 }
 
@@ -207,6 +227,7 @@ export function getRequest(id: string) {
 }
 
 export function uploadDocuments(formData: FormData) {
+  appendAttributionToFormData(formData);
   return apiFetch("/api/upload-documents", {
     method: "POST",
     body: formData

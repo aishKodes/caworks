@@ -19,7 +19,7 @@ Copy `.env.example` to `.env.local`:
 ```bash
 NEXT_PUBLIC_SITE_URL=https://www.vbcbharat.com
 NEXT_PUBLIC_API_BASE_URL=https://api.vbcbharat.com
-NEXT_PUBLIC_WHATSAPP_NUMBER=91XXXXXXXXXX
+NEXT_PUBLIC_WHATSAPP_NUMBER=917327854329
 NEXT_PUBLIC_PUBLIC_PHONE=+917327854329
 NEXT_PUBLIC_PUBLIC_EMAIL=consult@api.vbcbharat.com
 NEXT_PUBLIC_OFFICE_ADDRESS=Bhubaneswar, Odisha
@@ -27,12 +27,28 @@ NEXT_PUBLIC_BRAND_NAME=VB Consultants
 NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
 REVALIDATE_SECRET=change_this_if_revalidation_is_used
+
+NEXT_PUBLIC_GTM_ID=
+NEXT_PUBLIC_GA4_MEASUREMENT_ID=
+NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID=
+NEXT_PUBLIC_GOOGLE_ADS_INSURANCE_LEAD_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_FORM_SUBMIT_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_WHATSAPP_CLICK_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_PHONE_CLICK_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_DOCUMENT_UPLOAD_LABEL=
+
+NEXT_PUBLIC_GOOGLE_BUSINESS_PROFILE_URL=
+NEXT_PUBLIC_GOOGLE_MAPS_URL=
+NEXT_PUBLIC_GOOGLE_REVIEW_URL=
 ```
 
 The frontend works without backend configuration by showing a graceful error and keeping WhatsApp visible.
 Public CMS content is fetched on the server from the Hostinger API with static fallback. Marketing and SEO pages use ISR with a 300-second revalidate window. Admin saves can call `/api/revalidate` when `REVALIDATE_SECRET` is configured.
 The public service catalogue includes ITR, GST, business compliance, insurance claim support, loan, subsidy and project-report workflows. The verified public location is `Bhubaneswar, Odisha`.
 Customer API calls use credentialed cross-subdomain cookies. Login state is shared through the global auth provider, while public SEO pages remain server-rendered and ISR-cached.
+Google Ads/GA4/GTM scripts load only when IDs are configured. UTM, GCLID, GBRAID, WBRAID and MSCLKID are captured in first-party storage and sent with guest requests, service requests and document uploads.
+
+See `../docs/google-ads-launch-checklist.md` before launching paid campaigns.
 
 ## Vercel deployment settings
 

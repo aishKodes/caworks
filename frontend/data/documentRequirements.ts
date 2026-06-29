@@ -28,6 +28,7 @@ export const documentServiceOptions = [
   { value: "motor-insurance-claim-dispute", label: "Motor Insurance Claim Dispute" },
   { value: "property-insurance-claim-help", label: "Property / Business Insurance Claim" },
   { value: "insurance-legal-escalation-support", label: "Insurance Legal Escalation" },
+  { value: "itr-filing", label: "ITR Filing" },
   { value: "salary-itr-filing", label: "Salary ITR / Form 16" },
   { value: "itr-1-filing", label: "ITR-1 Filing" },
   { value: "itr-2-capital-gains-filing", label: "ITR-2 / Capital Gains" },
@@ -37,6 +38,7 @@ export const documentServiceOptions = [
   { value: "bookkeeping", label: "Bookkeeping" },
   { value: "tds-return-filing", label: "TDS Return Filing" },
   { value: "tax-notice-help", label: "Tax Notice Help" },
+  { value: "income-tax-notice-help", label: "Income Tax Notice Help" },
   { value: "business-registration", label: "Business Registration" },
   { value: "msme-udyam-registration", label: "MSME / Udyam Registration" },
   { value: "loan-project-report", label: "Loan Project Report" },
@@ -173,6 +175,16 @@ const requirements: Record<string, DocumentRequirement[]> = {
 requirements["business-loan-paperwork"] = requirements["loan-project-report"].map((item) => ({
   ...item,
   serviceSlug: "business-loan-paperwork"
+}));
+
+requirements["itr-filing"] = salaryRequirements.map((item) => ({
+  ...item,
+  serviceSlug: "itr-filing"
+}));
+
+requirements["income-tax-notice-help"] = requirements["tax-notice-help"].map((item) => ({
+  ...item,
+  serviceSlug: "income-tax-notice-help"
 }));
 
 for (const serviceSlug of [

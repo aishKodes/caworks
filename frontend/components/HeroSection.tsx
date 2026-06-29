@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import { GuestRequestForm } from "@/components/GuestRequestForm";
+import { TrackedLink } from "@/components/TrackedLink";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { heroServiceOptions } from "@/data/services";
 import { siteConfig, whatsappMessages } from "@/data/site.config";
@@ -39,13 +39,13 @@ export function HeroSection({
             {subtitle}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link href={primaryCtaHref} className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
+            <TrackedLink href={primaryCtaHref} eventName="service_cta_click" service="not-sure" eventLabel="hero_primary" className="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-red transition hover:bg-brand-700">
               {primaryCtaLabel}
-            </Link>
-            <Link href={secondaryCtaHref} className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
+            </TrackedLink>
+            <TrackedLink href={secondaryCtaHref} eventName="upload_documents_click" service="not-sure" eventLabel="hero_secondary" className="inline-flex justify-center rounded-full border border-charcoal-900/10 bg-white px-6 py-3.5 text-sm font-semibold text-charcoal-900 shadow-soft transition hover:border-brand-600 hover:text-brand-700">
               {secondaryCtaLabel}
-            </Link>
-            <WhatsAppButton message={whatsappMessages.homepage} className="px-6 py-3.5" variant="solid">
+            </TrackedLink>
+            <WhatsAppButton message={whatsappMessages.homepage} className="px-6 py-3.5" variant="solid" service="homepage">
               Talk on WhatsApp
             </WhatsAppButton>
           </div>

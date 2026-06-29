@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { getWhatsAppUrl } from "@/data/site.config";
+import { trackEvent } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 
 type WhatsAppButtonProps = {
@@ -7,13 +10,15 @@ type WhatsAppButtonProps = {
   message?: string;
   className?: string;
   variant?: "solid" | "outline" | "light";
+  service?: string;
 };
 
 export function WhatsAppButton({
   children = "Talk on WhatsApp",
   message,
   className,
-  variant = "outline"
+  variant = "outline",
+  service
 }: WhatsAppButtonProps) {
   const url = getWhatsAppUrl(message);
   const styles = {
@@ -29,6 +34,9 @@ export function WhatsAppButton({
       target={url ? "_blank" : undefined}
       rel={url ? "noopener noreferrer" : undefined}
       aria-label={url ? "Open WhatsApp support" : "Open contact page"}
+      onClick={() => {
+        if (url) trackEvent("whatsapp_click", { service, event_label: service || "general" });
+      }}
       className={cn(
         "inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition",
         styles[variant],

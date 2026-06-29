@@ -218,7 +218,7 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type, group_name)
 ('apple_touch_icon', '/apple-touch-icon.png', 'text', 'site'),
 ('default_og_image', '/images/vbc/og-default-vb-consultants.png', 'text', 'site'),
 ('phone', '+91 73278 54329', 'text', 'site'),
-('whatsapp_number', '919000000000', 'text', 'site'),
+('whatsapp_number', '917327854329', 'text', 'site'),
 ('support_email', 'consult@api.vbcbharat.com', 'text', 'site'),
 ('address', '', 'text', 'site'),
 ('business_hours', 'Monday to Saturday, 10:00 AM to 6:00 PM', 'text', 'site'),

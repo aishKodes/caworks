@@ -14,10 +14,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const routes = Array.from(new Set([...allPublicRoutes, ...cmsRoutes]));
 
-  return routes.map((route) => ({
-    url: `${siteConfig.siteUrl}${route === "/" ? "" : route}`,
-    lastModified: now,
-    changeFrequency: route === "/" ? "weekly" : "monthly",
-    priority: route === "/" ? 1 : route.includes("salary-itr") || route.includes("itr-1") ? 0.9 : 0.7
-  }));
+  return routes.map((route) => {
+    const isInsurance = route.includes("insurance") || route.includes("claim") || route.includes("mediclaim") || route.includes("cashless");
+    return {
+      url: `${siteConfig.siteUrl}${route === "/" ? "" : route}`,
+      lastModified: now,
+      changeFrequency: route === "/" || isInsurance ? "weekly" : "monthly",
+      priority: route === "/" ? 1 : isInsurance ? 0.95 : route.includes("salary-itr") || route.includes("itr-1") ? 0.9 : 0.7
+    };
+  });
 }

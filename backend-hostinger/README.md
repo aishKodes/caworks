@@ -200,6 +200,28 @@ The cookie is HttpOnly and Secure. The API accepts credentials only from `https:
 
 For an existing database, import `migrations/fix_smtp_and_sessions.sql` once. A fresh database already gets these fields from `install.sql`.
 
+## 5b. Google Ads attribution and Google Business Profile
+
+For an existing database, import:
+
+```text
+migrations/google_ads_tracking_and_leads.sql
+```
+
+Fresh installs already include these fields in `install.sql`.
+
+Set these optional `config.php` values when available:
+
+```php
+'GOOGLE_BUSINESS_PROFILE_URL' => '',
+'GOOGLE_MAPS_URL' => '',
+'GOOGLE_REVIEW_URL' => '',
+'TRACK_UTM' => true,
+'TRACK_GCLID' => true,
+```
+
+The frontend captures UTM, GCLID, GBRAID, WBRAID, MSCLKID, landing page and referrer. The backend stores them on quick leads, service requests, uploaded documents and `lead_events` where available. Admin leads and requests show source, campaign, term and landing page.
+
 ## 6. Configure Razorpay
 
 In Razorpay dashboard:
@@ -227,9 +249,20 @@ NEXT_PUBLIC_BRAND_NAME=VB Consultants
 NEXT_PUBLIC_REGISTERED_BUSINESS_NAME=Veedanath Business Consultants
 NEXT_PUBLIC_PUBLIC_PHONE=+917327854329
 NEXT_PUBLIC_OFFICE_ADDRESS=Bhubaneswar, Odisha
-NEXT_PUBLIC_WHATSAPP_NUMBER=91XXXXXXXXXX
+NEXT_PUBLIC_WHATSAPP_NUMBER=917327854329
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
 REVALIDATE_SECRET=your_revalidate_secret
+NEXT_PUBLIC_GTM_ID=
+NEXT_PUBLIC_GA4_MEASUREMENT_ID=
+NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID=
+NEXT_PUBLIC_GOOGLE_ADS_INSURANCE_LEAD_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_FORM_SUBMIT_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_WHATSAPP_CLICK_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_PHONE_CLICK_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_DOCUMENT_UPLOAD_LABEL=
+NEXT_PUBLIC_GOOGLE_BUSINESS_PROFILE_URL=
+NEXT_PUBLIC_GOOGLE_MAPS_URL=
+NEXT_PUBLIC_GOOGLE_REVIEW_URL=
 ```
 
 In backend `config.php`, set:

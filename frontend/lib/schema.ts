@@ -5,7 +5,8 @@ import { siteConfig } from "@/data/site.config";
 import { absoluteUrl } from "@/lib/seo";
 
 export function getOrganizationSchema() {
-  return {
+  const sameAs = [siteConfig.googleBusinessProfileUrl, siteConfig.googleMapsUrl].filter(Boolean);
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteConfig.name,
@@ -21,9 +22,12 @@ export function getOrganizationSchema() {
       availableLanguage: ["en", "hi", "or", "bn", "te"]
     }
   };
+  if (sameAs.length) schema.sameAs = sameAs;
+  return schema;
 }
 
 export function getProfessionalServiceSchema() {
+  const sameAs = [siteConfig.googleBusinessProfileUrl, siteConfig.googleMapsUrl].filter(Boolean);
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
@@ -36,6 +40,7 @@ export function getProfessionalServiceSchema() {
     priceRange: "₹₹",
     areaServed: ["India", "Odisha", "Bhubaneswar"]
   };
+  if (sameAs.length) schema.sameAs = sameAs;
   if (siteConfig.address) {
     schema.address = {
       "@type": "PostalAddress",

@@ -42,6 +42,9 @@ export type SiteSettingsContent = {
   public_email?: string;
   address?: string;
   footer_text?: string;
+  google_business_profile_url?: string;
+  google_maps_url?: string;
+  google_review_url?: string;
 };
 
 export type ServiceContentOverride = {
@@ -197,7 +200,7 @@ export async function getServicePricingNote(slug: string): Promise<string | null
   return matches.map((item) => `${item.name}: ${item.price}`).join(" · ");
 }
 
-export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettingsContent, "phone" | "support_email" | "public_email" | "address" | "footer_text">>> {
+export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettingsContent, "phone" | "support_email" | "public_email" | "address" | "footer_text" | "google_business_profile_url" | "google_maps_url" | "google_review_url">>> {
   const remote = await fetchCms<SiteSettingsContent>("/api/content/site-settings");
   const publicEmail = (remote?.public_email || remote?.support_email || siteConfig.email).trim();
   return {
@@ -205,6 +208,9 @@ export async function getSiteSettingsContent(): Promise<Required<Pick<SiteSettin
     support_email: publicEmail,
     public_email: publicEmail,
     address: cleanAddress(remote?.address) || cleanAddress(siteConfig.address),
+    google_business_profile_url: (remote?.google_business_profile_url || siteConfig.googleBusinessProfileUrl).trim(),
+    google_maps_url: (remote?.google_maps_url || siteConfig.googleMapsUrl).trim(),
+    google_review_url: (remote?.google_review_url || siteConfig.googleReviewUrl).trim(),
     footer_text: cleanPublicText(remote?.footer_text, "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance, built for clear mobile steps.")
       .replace("Online support for ITR filing, GST, loan paperwork, bookkeeping, notices and business compliance.", "Online support for ITR filing, GST, insurance claims, loan paperwork and business compliance.")
   };

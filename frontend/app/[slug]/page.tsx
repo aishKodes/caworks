@@ -255,14 +255,18 @@ function LocalCmsPage({ page }: { page: LocalPageContent }) {
 
 const legalText = {
   "privacy-policy": [
-    ["Information collected", "We collect details submitted through forms, signup, login, document upload, payment flows and contact messages."],
+    ["Information collected", "We collect details submitted through forms, signup, login, document upload, payment flows and contact messages, including name, phone, email, service need and message."],
     ["Document handling", "Documents are used only for the selected request. Upload only files needed for your work."],
-    ["Sharing", "Information may be shared with service providers, payment processors and government portals only when required for the request."],
+    ["Analytics and ads", "We may use cookies, UTM details, click IDs and analytics or advertising tools to understand lead source, improve service pages and measure ads."],
+    ["Follow-up", "We may contact you by phone, WhatsApp or email about your request. We do not sell personal data."],
+    ["Sharing", "Information may be shared with service providers, payment processors, professional partners and government or insurance portals only when required for the request."],
+    ["Correction or deletion", "You can contact us to request correction or deletion of personal details where legally and operationally possible."],
     ["Security", "We use access controls, private uploads and secure handling practices. No online system is risk free."]
   ],
   "terms-and-conditions": [
-    ["Service scope", "Submitting a request does not start paid work until scope and fee are confirmed."],
-    ["User responsibility", "You must provide accurate information and documents."],
+    ["Service scope", "Submitting a request does not guarantee any outcome. Paid work starts only after scope and fee are confirmed."],
+    ["User responsibility", "You must provide accurate information and documents. Wrong or incomplete records can affect timelines and outcomes."],
+    ["Communication", "By submitting a request, you agree that we may contact you by phone, WhatsApp or email for follow-up and document clarification."],
     ["No misleading promises", "We do not promise refund, tax saving or outcomes controlled by official systems."],
     ["Timelines", "Timelines depend on documents, payment, user response and portal availability."]
   ],

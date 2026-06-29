@@ -78,6 +78,25 @@ export async function Footer() {
             <div className="mt-6">
               <WhatsAppButton variant="light" />
             </div>
+            {settings.google_business_profile_url || settings.google_maps_url || settings.google_review_url ? (
+              <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold">
+                {settings.google_business_profile_url ? (
+                  <a href={settings.google_business_profile_url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3 py-2 text-white/75 transition hover:text-white">
+                    View Google Profile
+                  </a>
+                ) : null}
+                {settings.google_maps_url ? (
+                  <a href={settings.google_maps_url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3 py-2 text-white/75 transition hover:text-white">
+                    Find Us on Google Maps
+                  </a>
+                ) : null}
+                {settings.google_review_url ? (
+                  <a href={settings.google_review_url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3 py-2 text-white/75 transition hover:text-white">
+                    Review Us on Google
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-8 sm:grid-cols-3">

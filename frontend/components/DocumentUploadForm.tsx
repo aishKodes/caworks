@@ -12,6 +12,7 @@ import {
 import { whatsappMessages } from "@/data/site.config";
 import { uploadDocuments } from "@/lib/api";
 import { buildAuthRedirectUrl, requireAuthForIntent } from "@/lib/authRedirect";
+import { trackEvent } from "@/lib/tracking";
 
 const inputClass =
   "mt-2 w-full rounded-2xl border border-charcoal-900/10 bg-white px-4 py-3.5 text-base text-charcoal-900 shadow-sm transition focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/10";
@@ -100,12 +101,14 @@ export function DocumentUploadForm({
     if (serviceSlug === "not-sure" && details.trim().length < 8) {
       setStatus("error");
       setMessage("Please add a short message so we understand what help you need.");
+      trackEvent("form_error", { service: serviceSlug, event_label: "missing_not_sure_message" });
       return;
     }
 
     if (!selectedCount && serviceSlug !== "not-sure") {
       setStatus("error");
       setMessage("Please choose at least one document, or use WhatsApp if you need help.");
+      trackEvent("form_error", { service: serviceSlug, event_label: "no_files_selected" });
       return;
     }
 
@@ -135,11 +138,17 @@ export function DocumentUploadForm({
       setDetails("");
       setStatus("success");
       setMessage(result.message || "Documents uploaded. We will check and update your request.");
+      trackEvent("document_upload_submit", {
+        service: serviceSlug,
+        request_id: requestCode || requestId,
+        event_label: `${selectedCount} file${selectedCount === 1 ? "" : "s"}`
+      });
     } else {
       if (result.status === 401) {
         if (requestCode && uploadToken) {
           setStatus("error");
           setMessage("This secure upload link is invalid or expired. Please start a new request or contact us on WhatsApp.");
+          trackEvent("form_error", { service: serviceSlug, request_id: requestCode || requestId, event_label: "upload_token_invalid" });
           return;
         }
         router.push(buildAuthRedirectUrl({ intent: "upload_documents", returnTo, serviceSlug, requestId }));
@@ -147,6 +156,7 @@ export function DocumentUploadForm({
       }
       setStatus("error");
       setMessage(result.message || "Upload failed. Please try again or use WhatsApp.");
+      trackEvent("form_error", { service: serviceSlug, request_id: requestCode || requestId, event_label: result.message || "upload_failed" });
     }
   }
 

@@ -75,6 +75,16 @@ $updates = db()->prepare('SELECT * FROM status_updates WHERE request_id=? ORDER 
 $updates->execute([$id]);
 $notes = db()->prepare('SELECT an.*, au.full_name admin_name FROM admin_notes an LEFT JOIN admin_users au ON au.id=an.admin_id WHERE an.request_id=? ORDER BY an.created_at DESC');
 $notes->execute([$id]);
+$leadEvents = [];
+try {
+    if (admin_db_column_exists('lead_events', 'request_id')) {
+        $eventsStmt = db()->prepare('SELECT * FROM lead_events WHERE request_id=? OR request_code=? ORDER BY created_at DESC LIMIT 20');
+        $eventsStmt->execute([$id, $request['request_code']]);
+        $leadEvents = $eventsStmt->fetchAll();
+    }
+} catch (Throwable $ignored) {
+    $leadEvents = [];
+}
 $staff = db()->query("SELECT id, full_name, role FROM admin_users WHERE active=1 AND role IN ('super_admin','admin','staff','accountant') ORDER BY full_name")->fetchAll();
 admin_header('Request ' . $request['request_code']);
 $wa = admin_whatsapp_url($request['phone'], 'Hello ' . $request['full_name'] . ', update for Request ID ' . $request['request_code']);
@@ -87,6 +97,10 @@ $wa = admin_whatsapp_url($request['phone'], 'Hello ' . $request['full_name'] . '
     <p>Phone: <?= e($request['phone']) ?> · Email: <?= e($request['email']) ?></p>
     <p>Assigned: <strong><?= e($request['assigned_name'] ?? 'Unassigned') ?></strong></p>
     <p>Quoted amount: <strong><?= e($request['quoted_amount'] ?? '') ?></strong></p>
+    <?php if (!empty($request['lead_source']) || !empty($request['landing_page']) || !empty($request['utm_campaign']) || !empty($request['gclid'])): ?>
+      <p>Source: <strong><?= e($request['lead_source'] ?? 'Captured') ?></strong><br><span class="muted"><?= e(trim(($request['utm_campaign'] ?? '') . ' ' . ($request['utm_term'] ?? ''))) ?></span></p>
+      <p class="muted">Landing: <?= e($request['landing_page'] ?? '') ?></p>
+    <?php endif; ?>
     <p><a class="btn" target="_blank" href="<?= e($wa) ?>">Open WhatsApp</a></p>
   </div>
   <div class="card">
@@ -111,6 +125,23 @@ $wa = admin_whatsapp_url($request['phone'], 'Hello ' . $request['full_name'] . '
     <button class="btn" name="assign_request" value="1">Save assignment</button>
   </form>
 </div>
+<?php if ($leadEvents): ?>
+<div class="card" style="margin-top:18px">
+  <h2>Lead attribution and events</h2>
+  <div class="table-wrap"><table><tr><th>Event</th><th>Service</th><th>Source</th><th>Campaign / term</th><th>Page</th><th>Time</th></tr>
+    <?php foreach ($leadEvents as $event): ?>
+      <tr>
+        <td><?= e($event['event_type'] ?? '') ?><br><span class="muted"><?= e($event['event_label'] ?? '') ?></span></td>
+        <td><?= e($event['service'] ?? '') ?></td>
+        <td><?= e($event['lead_source'] ?? '') ?></td>
+        <td><?= e(trim(($event['utm_campaign'] ?? '') . ' / ' . ($event['utm_term'] ?? ''))) ?></td>
+        <td><span class="muted"><?= e($event['landing_page'] ?? $event['page_path'] ?? '') ?></span></td>
+        <td><?= e($event['created_at'] ?? '') ?></td>
+      </tr>
+    <?php endforeach; ?>
+  </table></div>
+</div>
+<?php endif; ?>
 <h2>Documents</h2>
 <div class="table-wrap"><table><tr><th>Document slot</th><th>Name</th><th>Status</th><th>Size</th><th>Uploaded</th><th>Action</th></tr>
 <?php foreach ($docs as $doc): ?>

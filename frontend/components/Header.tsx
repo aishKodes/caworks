@@ -30,7 +30,7 @@ const menuGroups = [
   },
   {
     title: "Insurance Claims",
-    slugs: ["insurance-claim-documentation-support", "health-insurance-claim-help", "life-insurance-claim-assistance", "motor-insurance-claim-support", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "insurance-claim-rejected", "settlement-documentation-assistance", "nominee-claim-assistance"]
+    slugs: ["insurance-claim-support", "insurance-claim-rejected", "health-insurance-claim-help", "cashless-claim-denied", "mediclaim-reimbursement-help", "motor-insurance-claim-support", "life-insurance-claim-assistance", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "settlement-documentation-assistance", "nominee-claim-assistance"]
   },
   {
     title: "More support",
@@ -65,7 +65,7 @@ function groupCmsServices(items: MenuServiceContent[]) {
     { slug: "upload-documents", label: "Document Upload", heroText: "Upload files or send documents from your phone." },
     { slug: "track-status", label: "Track Status", heroText: "Check request, payment and document status." }
   ]);
-  const insuranceMenuSlugs = new Set(["insurance-claim-documentation-support", "health-insurance-claim-help", "life-insurance-claim-assistance", "motor-insurance-claim-support", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "insurance-claim-rejected", "settlement-documentation-assistance", "nominee-claim-assistance"]);
+  const insuranceMenuSlugs = new Set(["insurance-claim-support", "insurance-claim-rejected", "health-insurance-claim-help", "cashless-claim-denied", "mediclaim-reimbursement-help", "motor-insurance-claim-support", "life-insurance-claim-assistance", "personal-accident-insurance-claim", "claim-form-preparation-support", "insurance-claim-follow-up", "settlement-documentation-assistance", "nominee-claim-assistance"]);
   const insuranceItems = services.filter((service) => insuranceMenuSlugs.has(service.slug));
   const currentInsuranceSlugs = new Set((grouped.get("Insurance Claims") || []).map((service) => service.slug));
   grouped.set("Insurance Claims", [
